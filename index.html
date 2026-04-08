@@ -185,7 +185,7 @@
     function startRound() {
         if (round > 5) return;
         gameActive = false;
-        toggleSliders(false); // LOCK SLIDERS
+        toggleSliders(false); 
         
         mainBtn.disabled = true;
         mainBtn.innerText = "SUBMIT MATCH";
@@ -194,13 +194,21 @@
         targetHzDisplay.innerText = "";
         userHzDisplay.innerText = "";
         
-        // Reset Sliders to neutral state for new round
+        // Randomize Slider Positions for the new round
         if(mode === 'color') {
-            document.getElementById('hue').value = 180;
-            document.getElementById('sat').value = 50;
-            document.getElementById('light').value = 50;
+            const rH = Math.floor(Math.random() * 360);
+            const rS = Math.floor(Math.random() * 100);
+            const rL = Math.floor(Math.random() * 100);
+            document.getElementById('hue').value = rH;
+            document.getElementById('sat').value = rS;
+            document.getElementById('light').value = rL;
+            document.getElementById('val-h').innerText = rH;
+            document.getElementById('val-s').innerText = rS;
+            document.getElementById('val-l').innerText = rL;
         } else {
-            document.getElementById('freq').value = 600;
+            const rF = (Math.random() * (1000 - 200) + 200).toFixed(1);
+            document.getElementById('freq').value = rF;
+            document.getElementById('val-f').innerText = Math.round(rF) + "Hz";
         }
 
         const overlay = document.getElementById('overlay-layer');
@@ -227,8 +235,8 @@
                 
                 mainBtn.disabled = false;
                 gameActive = true;
-                toggleSliders(true); // UNLOCK SLIDERS
-                updateVisuals();
+                toggleSliders(true); 
+                updateVisuals(); // Update workspace background/audio to match new random slider positions
             }
         }, 10);
     }
@@ -250,7 +258,7 @@
 
     function submitMatch() {
         gameActive = false;
-        toggleSliders(false); // LOCK SLIDERS AGAIN
+        toggleSliders(false); 
         mainBtn.disabled = true;
         let roundScore = 1.0;
         const f = parseFloat(document.getElementById('freq').value);
