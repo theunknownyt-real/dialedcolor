@@ -10,7 +10,6 @@
             --panel: #141414;
             --text: #ffffff;
             --text-dim: #666;
-            --accent: #444;
         }
 
         body, html {
@@ -30,9 +29,9 @@
             width: 100vw;
         }
 
-        /* Side Controls */
+        /* Sidebar with Dynamic Sliders */
         #sidebar {
-            width: 100px;
+            width: 110px;
             background: var(--panel);
             display: flex;
             flex-direction: column;
@@ -48,7 +47,7 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            gap: 10px;
+            gap: 15px;
         }
 
         .slider-label {
@@ -59,26 +58,40 @@
             color: var(--text-dim);
             writing-mode: vertical-rl;
             transform: rotate(180deg);
-            margin-top: 10px;
         }
 
         input[type=range].vertical {
-            -webkit-appearance: slider-vertical;
-            width: 8px;
-            height: 70%;
-            background: #333;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 65%;
+            border-radius: 6px;
             outline: none;
             cursor: crosshair;
+            border: 1px solid #333;
         }
 
-        /* Main Game Area */
+        /* Thumb Styling */
+        input[type=range].vertical::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 2px solid black;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Initial Gradients */
+        #hue { background: linear-gradient(to bottom, #ff0000, #ff00ff, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000); }
+
+        /* Main Workspace */
         #workspace {
             flex: 1;
             position: relative;
             background: var(--bg);
         }
 
-        /* The Replicate Color (Right Half) */
         #user-half {
             position: absolute;
             right: 0;
@@ -90,7 +103,6 @@
             transition: background-color 0.1s;
         }
 
-        /* Full Screen Target & Countdown */
         #target-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -104,11 +116,10 @@
             font-size: 10rem;
             font-weight: 900;
             color: white;
-            text-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-shadow: 0 10px 40px rgba(0,0,0,0.4);
             pointer-events: none;
         }
 
-        /* UI Elements */
         #game-ui {
             position: absolute;
             left: 40px;
@@ -136,7 +147,6 @@
             border-radius: 2px;
             cursor: pointer;
             letter-spacing: 1px;
-            transition: opacity 0.3s;
         }
 
         #main-btn:disabled { opacity: 0; pointer-events: none; }
@@ -147,7 +157,7 @@
             margin-top: 20px;
         }
 
-        /* Final Result Screen */
+        /* End Screen */
         #results-screen {
             position: fixed;
             top: 0; left: 0;
@@ -158,7 +168,6 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
         }
 
         .results-grid {
@@ -183,8 +192,6 @@
             position: absolute; width: 100%; height: 100%;
             clip-path: polygon(100% 100%, 0% 100%, 100% 0);
         }
-
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -206,16 +213,10 @@
     </div>
 
     <div id="workspace">
-        <div id="target-overlay">
-            <div id="countdown">3</div>
-        </div>
-
+        <div id="target-overlay"><div id="countdown">3</div></div>
         <div id="user-half"></div>
-
         <div id="game-ui">
-            <div class="round-info">
-                ROUND <span id="round-num">1</span> / 5 &nbsp; | &nbsp; TOTAL <span id="total-score">0.0</span>
-            </div>
+            <div class="round-info">ROUND <span id="round-num">1</span> / 5 &nbsp; | &nbsp; TOTAL <span id="total-score">0.0</span></div>
             <button id="main-btn">SUBMIT MATCH</button>
             <div id="score-popup"></div>
         </div>
@@ -243,14 +244,11 @@
 
     function startRound() {
         if (round > 5) return;
-
         target = {
             h: Math.floor(Math.random() * 360),
             s: Math.floor(Math.random() * 80) + 10,
             l: Math.floor(Math.random() * 60) + 20
         };
-
-        // Reset display
         targetOverlay.style.width = '100%';
         targetOverlay.style.display = 'flex';
         targetOverlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
@@ -259,12 +257,10 @@
         
         let timeLeft = 3;
         countdown.innerText = timeLeft;
-        
         const timer = setInterval(() => {
             timeLeft--;
-            if (timeLeft > 0) {
-                countdown.innerText = timeLeft;
-            } else {
+            if (timeLeft > 0) countdown.innerText = timeLeft;
+            else {
                 clearInterval(timer);
                 targetOverlay.style.display = 'none';
                 mainBtn.disabled = false;
@@ -284,6 +280,11 @@
         document.getElementById('val-l').innerText = l;
         
         userHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
+
+        // Update Slider Visuals (Reversed for Vertical to go bottom-up or top-down)
+        // Here we use top-to-bottom gradients to match the vertical feel
+        document.getElementById('sat').style.background = `linear-gradient(to bottom, hsl(${h}, 100%, ${l}%), hsl(${h}, 0%, ${l}%))`;
+        document.getElementById('light').style.background = `linear-gradient(to bottom, #fff, hsl(${h}, ${s}%, 50%), #000)`;
     }
 
     function submit() {
@@ -291,13 +292,11 @@
         const s = document.getElementById('sat').value;
         const l = document.getElementById('light').value;
 
-        // Reveal comparison: Target on left, User on right
         targetOverlay.style.display = 'flex';
         targetOverlay.style.width = '50%';
         targetOverlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
         countdown.innerText = "";
 
-        // Calculate Score
         let hDiff = Math.abs(target.h - h);
         if (hDiff > 180) hDiff = 360 - hDiff;
         const sDiff = Math.abs(target.s - s);
@@ -307,11 +306,7 @@
         let roundScore = Math.max(0, 10 - error);
         roundScore = Math.round(roundScore * 10) / 10;
 
-        history.push({
-            target: `hsl(${target.h}, ${target.s}%, ${target.l}%)`,
-            user: `hsl(${h}, ${s}%, ${l}%)`
-        });
-
+        history.push({ target: `hsl(${target.h}, ${target.s}%, ${target.l}%)`, user: `hsl(${h}, ${s}%, ${l}%)` });
         totalScore += roundScore;
         scorePopup.innerText = roundScore.toFixed(1);
         
@@ -331,25 +326,18 @@
     function showEnd() {
         document.getElementById('results-screen').style.display = 'flex';
         document.getElementById('final-total').innerText = totalScore.toFixed(1);
-        
         const grid = document.getElementById('results-grid');
         grid.innerHTML = ''; 
-
         history.forEach((item) => {
             const box = document.createElement('div');
             box.className = 'result-box';
-            box.innerHTML = `
-                <div class="tri-target" style="background: ${item.target}"></div>
-                <div class="tri-user" style="background: ${item.user}"></div>
-            `;
+            box.innerHTML = `<div class="tri-target" style="background: ${item.target}"></div><div class="tri-user" style="background: ${item.user}"></div>`;
             grid.appendChild(box);
         });
     }
 
     function resetGame() {
-        round = 1;
-        totalScore = 0;
-        history = [];
+        round = 1; totalScore = 0; history = [];
         document.getElementById('round-num').innerText = "1";
         document.getElementById('total-score').innerText = "0.0";
         document.getElementById('results-screen').style.display = 'none';
