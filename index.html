@@ -29,6 +29,35 @@
             width: 100vw;
         }
 
+        /* Home Screen Overlay */
+        #home-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: var(--bg);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 0.7rem;
+            letter-spacing: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin: 0 0 40px 0;
+            letter-spacing: -2px;
+        }
+
         /* Sidebar with Large Rotated Sliders */
         #sidebar {
             width: 180px;
@@ -152,7 +181,7 @@
             margin-bottom: 20px;
         }
 
-        #main-btn {
+        .btn-action {
             background: white;
             color: black;
             border: none;
@@ -161,8 +190,12 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.1s;
         }
 
+        .btn-action:active { transform: scale(0.96); }
         #main-btn:disabled { opacity: 0; }
 
         #score-popup {
@@ -204,6 +237,12 @@
 </head>
 <body>
 
+<div id="home-screen">
+    <div class="logo">Chromatic Labs</div>
+    <h1 class="title">PRECISION<br>MATCH</h1>
+    <button class="btn-action" onclick="startGame()">Start Mission</button>
+</div>
+
 <div id="game-wrapper">
     <div id="sidebar">
         <div class="slider-wrapper">
@@ -233,7 +272,7 @@
 
         <div id="game-ui">
             <div class="round-info">ROUND <span id="round-num">1</span> / 5 &nbsp; | &nbsp; TOTAL <span id="total-score">0.0</span></div>
-            <button id="main-btn">SUBMIT MATCH</button>
+            <button id="main-btn" class="btn-action">SUBMIT MATCH</button>
             <div id="score-popup"></div>
         </div>
     </div>
@@ -242,7 +281,7 @@
         <p style="color: var(--text-dim); letter-spacing: 4px; font-size: 0.8rem;">FINAL PERFORMANCE</p>
         <h1 id="final-total" style="font-size: 8rem; margin: 10px 0;">0.0</h1>
         <div id="results-grid" class="results-grid"></div>
-        <button onclick="resetGame()" style="padding: 20px 60px; font-weight: 800; cursor: pointer; background: white; border: none; font-size: 1.2rem;">RESTART</button>
+        <button class="btn-action" onclick="resetGame()" style="padding: 20px 60px; font-size: 1.2rem;">Restart</button>
     </div>
 </div>
 
@@ -258,6 +297,11 @@
     const countdown = document.getElementById('countdown');
     const mainBtn = document.getElementById('main-btn');
     const scorePopup = document.getElementById('score-popup');
+
+    function startGame() {
+        document.getElementById('home-screen').style.display = 'none';
+        startRound();
+    }
 
     function startRound() {
         if (round > 5) return;
@@ -321,7 +365,6 @@
 
         const error = (hDiff / 180 * 7) + (sDiff / 100 * 2) + (lDiff / 100 * 2);
         
-        // Final Scoring logic: Range from 1.0 to 10.0
         let roundScore = Math.max(1, 10 - error);
         roundScore = Math.round(roundScore * 10) / 10;
 
@@ -371,7 +414,6 @@
     });
 
     mainBtn.onclick = submit;
-    startRound();
 </script>
 
 </body>
