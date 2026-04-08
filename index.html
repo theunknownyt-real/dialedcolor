@@ -12,172 +12,166 @@
             --text-dim: #666;
         }
 
-        body {
+        body, html {
             margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
             background-color: var(--bg);
             color: var(--text);
             font-family: 'Inter', -apple-system, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            overflow: hidden;
         }
 
-        #game-container {
-            width: 100%;
-            max-width: 420px;
-            padding: 20px;
-            text-align: center;
+        /* Layout Container */
+        #game-wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
         }
+
+        /* Left Sidebar Controls */
+        #sidebar {
+            width: 120px;
+            background: var(--panel);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            border-right: 1px solid #222;
+            z-index: 100;
+            gap: 20px;
+        }
+
+        .vertical-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            width: 100%;
+            gap: 15px;
+        }
+
+        .v-label {
+            font-size: 0.6rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            transform: rotate(-90deg);
+            white-space: nowrap;
+            margin-bottom: 20px;
+        }
+
+        input[type=range].vertical {
+            writing-mode: bt-lr; /* IE */
+            -webkit-appearance: slider-vertical;
+            width: 12px;
+            height: 60%;
+            background: #333;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        /* Main Workspace */
+        #workspace {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #target-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #countdown-text {
+            font-size: 8rem;
+            font-weight: 900;
+            text-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        #user-half {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: #1a1a1a;
+            transition: background-color 0.1s;
+        }
+
+        #ui-layer {
+            position: relative;
+            z-index: 10;
+            padding: 40px;
+            pointer-events: none;
+        }
+        
+        #ui-layer * { pointer-events: auto; }
 
         .header {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
+            gap: 40px;
             font-size: 0.75rem;
             font-weight: 800;
-            letter-spacing: 2px;
             color: var(--text-dim);
+            margin-bottom: 20px;
         }
 
-        .preview-container {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            margin: 0 auto 40px;
-        }
-
-        .color-circle {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            display: flex;
-            overflow: hidden;
-            background: #1a1a1a;
-            box-shadow: 0 0 60px rgba(0,0,0,0.8);
-        }
-
-        .half {
-            height: 100%;
-            transition: background-color 0.1s ease;
-        }
-
-        #target-half { width: 0%; display: none; }
-        #user-half { width: 100%; }
-
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            margin-bottom: 35px;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .label-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-dim);
-        }
-
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 12px;
-            border-radius: 6px;
-            outline: none;
-            border: 1px solid #333;
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border: 2px solid black;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        #hue { background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); }
-        
-        button {
-            width: 100%;
-            padding: 18px;
-            border-radius: 8px;
-            border: none;
+        #main-btn {
+            width: 200px;
+            padding: 15px;
             background: white;
             color: black;
+            border: none;
             font-weight: 800;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.2); }
-        button:disabled { opacity: 0.2; }
+        #main-btn:disabled { opacity: 0; pointer-events: none; }
 
-        #score-display {
-            margin-top: 20px;
-            font-size: 1.8rem;
-            font-weight: 900;
-            height: 40px;
+        /* Results Screen */
+        #results-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
         }
 
-        /* Triangular Result Boxes */
         .results-grid {
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
             margin: 40px 0;
         }
 
         .result-box {
-            width: 60px;
-            height: 60px;
+            width: 80px; height: 80px;
             position: relative;
-            background: #222;
+            border: 1px solid #333;
             border-radius: 4px;
             overflow: hidden;
-            border: 1px solid #333;
         }
 
         .tri-target {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; width: 100%; height: 100%;
             clip-path: polygon(0 0, 0% 100%, 100% 0);
         }
-
         .tri-user {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; width: 100%; height: 100%;
             clip-path: polygon(100% 100%, 0% 100%, 100% 0);
-        }
-
-        .res-score {
-            position: absolute;
-            bottom: 2px;
-            right: 4px;
-            font-size: 10px;
-            font-weight: 900;
-            color: white;
-            text-shadow: 0 0 3px black;
-            z-index: 10;
         }
 
         .hidden { display: none !important; }
@@ -185,46 +179,44 @@
 </head>
 <body>
 
-<div id="game-container">
-    <div class="header">
-        <span>ROUND <span id="round-num">1</span> / 5</span>
-        <span>TOTAL: <span id="total-score">0.0</span></span>
-    </div>
-
-    <div class="preview-container" id="main-preview">
-        <div class="color-circle">
-            <div id="target-half" class="half"></div>
-            <div id="user-half" class="half"></div>
+<div id="game-wrapper">
+    <div id="sidebar">
+        <div class="vertical-group">
+            <span class="v-label">Hue: <span id="v-hue">180</span></span>
+            <input type="range" id="hue" class="vertical" min="0" max="360" value="180">
+        </div>
+        <div class="vertical-group">
+            <span class="v-label">Sat: <span id="v-sat">50</span></span>
+            <input type="range" id="sat" class="vertical" min="0" max="100" value="50">
+        </div>
+        <div class="vertical-group">
+            <span class="v-label">Light: <span id="v-light">50</span></span>
+            <input type="range" id="light" class="vertical" min="0" max="100" value="50">
         </div>
     </div>
 
-    <div id="ui-play">
-        <div class="controls">
-            <div class="control-group">
-                <div class="label-row"><span>Hue</span><span id="v-hue">180</span></div>
-                <input type="range" id="hue" min="0" max="360" value="180">
-            </div>
-            <div class="control-group">
-                <div class="label-row"><span>Saturation</span><span id="v-sat">50</span></div>
-                <input type="range" id="sat" min="0" max="100" value="50">
-            </div>
-            <div class="control-group">
-                <div class="label-row"><span>Lightness</span><span id="v-light">50</span></div>
-                <input type="range" id="light" min="0" max="100" value="50">
-            </div>
+    <div id="workspace">
+        <div id="target-overlay">
+            <div id="countdown-text">3</div>
         </div>
-        <button id="main-btn">SUBMIT MATCH</button>
-        <div id="score-display"></div>
-    </div>
-
-    <div id="ui-results" class="hidden">
-        <p style="color: var(--text-dim); font-size: 0.7rem; letter-spacing: 2px; margin: 0;">FINAL PERFORMANCE</p>
-        <h1 id="final-total" style="margin: 10px 0 0 0; font-size: 3rem;">0.0</h1>
         
-        <div id="results-grid" class="results-grid">
-            </div>
+        <div id="user-half"></div>
 
-        <button onclick="resetGame()">PLAY AGAIN</button>
+        <div id="ui-layer">
+            <div class="header">
+                <span>ROUND <span id="round-num">1</span>/5</span>
+                <span>TOTAL: <span id="total-score">0.0</span></span>
+            </div>
+            <button id="main-btn">SUBMIT MATCH</button>
+            <div id="score-display" style="font-size: 3rem; font-weight: 900; margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <div id="results-screen">
+        <p style="color: var(--text-dim); letter-spacing: 3px;">FINAL SCORE</p>
+        <h1 id="final-total" style="font-size: 5rem; margin: 10px 0;">0.0</h1>
+        <div id="results-grid" class="results-grid"></div>
+        <button onclick="resetGame()" style="width: 200px; padding: 15px; background: white; border: none; font-weight: 800;">PLAY AGAIN</button>
     </div>
 </div>
 
@@ -235,13 +227,13 @@
     let history = [];
     
     const userHalf = document.getElementById('user-half');
-    const targetHalf = document.getElementById('target-half');
+    const targetOverlay = document.getElementById('target-overlay');
+    const countdownText = document.getElementById('countdown-text');
     const mainBtn = document.getElementById('main-btn');
     const scoreDisplay = document.getElementById('score-display');
-    const previewArea = document.getElementById('main-preview');
 
     function startRound() {
-        if (round > 5) return showEnd();
+        if (round > 5) return;
 
         target = {
             h: Math.floor(Math.random() * 360),
@@ -249,18 +241,26 @@
             l: Math.floor(Math.random() * 60) + 20
         };
 
-        targetHalf.style.display = 'none';
-        userHalf.style.width = '100%';
-        userHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+        // Reveal Full Screen Target
+        targetOverlay.style.display = 'flex';
+        targetOverlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
         mainBtn.disabled = true;
-        scoreDisplay.innerText = "MEMORIZE...";
-
-        setTimeout(() => {
-            userHalf.style.backgroundColor = '#1a1a1a';
-            updateUI();
-            mainBtn.disabled = false;
-            scoreDisplay.innerText = "";
-        }, 4000); 
+        
+        let count = 3;
+        countdownText.innerText = count;
+        
+        const timer = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdownText.innerText = count;
+            } else {
+                clearInterval(timer);
+                targetOverlay.style.display = 'none';
+                mainBtn.disabled = false;
+                userHalf.style.backgroundColor = '#1a1a1a';
+                updateUI();
+            }
+        }, 1000);
     }
 
     function updateUI() {
@@ -273,9 +273,6 @@
         document.getElementById('v-light').innerText = l;
         
         userHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
-
-        document.getElementById('sat').style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
-        document.getElementById('light').style.background = `linear-gradient(to right, #000, hsl(${h}, ${s}%, 50%), #fff)`;
     }
 
     function submit() {
@@ -283,10 +280,11 @@
         const s = document.getElementById('sat').value;
         const l = document.getElementById('light').value;
 
-        targetHalf.style.display = 'block';
-        targetHalf.style.width = '50%';
-        userHalf.style.width = '50%';
-        targetHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+        // Reveal target on left side for comparison
+        targetOverlay.style.display = 'flex';
+        targetOverlay.style.width = '50%';
+        targetOverlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+        countdownText.innerText = "";
 
         let hDiff = Math.abs(target.h - h);
         if (hDiff > 180) hDiff = 360 - hDiff;
@@ -312,17 +310,17 @@
 
     function nextRound() {
         round++;
+        targetOverlay.style.width = '100%'; // Reset for full screen
         document.getElementById('round-num').innerText = round;
         document.getElementById('total-score').innerText = totalScore.toFixed(1);
+        scoreDisplay.innerText = "";
         mainBtn.innerText = "SUBMIT MATCH";
         mainBtn.onclick = submit;
         startRound();
     }
 
     function showEnd() {
-        previewArea.classList.add('hidden'); // Make original circle go away
-        document.getElementById('ui-play').classList.add('hidden');
-        document.getElementById('ui-results').classList.remove('hidden');
+        document.getElementById('results-screen').style.display = 'flex';
         document.getElementById('final-total').innerText = totalScore.toFixed(1);
         
         const grid = document.getElementById('results-grid');
@@ -334,7 +332,6 @@
             box.innerHTML = `
                 <div class="tri-target" style="background: ${item.target}"></div>
                 <div class="tri-user" style="background: ${item.user}"></div>
-                <div class="res-score">${item.score}</div>
             `;
             grid.appendChild(box);
         });
@@ -346,9 +343,9 @@
         history = [];
         document.getElementById('round-num').innerText = "1";
         document.getElementById('total-score').innerText = "0.0";
-        previewArea.classList.remove('hidden');
-        document.getElementById('ui-play').classList.remove('hidden');
-        document.getElementById('ui-results').classList.add('hidden');
+        document.getElementById('results-screen').style.display = 'none';
+        targetOverlay.style.width = '100%';
+        scoreDisplay.innerText = "";
         mainBtn.onclick = submit;
         startRound();
     }
