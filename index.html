@@ -20,7 +20,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 20px 0;
         }
 
         #game-container {
@@ -40,7 +41,6 @@
             color: var(--text-dim);
         }
 
-        /* Preview Circle */
         .preview-container {
             position: relative;
             width: 220px;
@@ -66,7 +66,6 @@
         #target-half { width: 0%; display: none; }
         #user-half { width: 100%; }
 
-        /* Sliders Styling */
         .controls {
             display: flex;
             flex-direction: column;
@@ -98,7 +97,6 @@
             border: 1px solid #333;
         }
 
-        /* Custom Thumb */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 20px;
@@ -107,10 +105,8 @@
             border: 2px solid black;
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* Dynamic Gradients */
         #hue { background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); }
         
         button {
@@ -135,6 +131,50 @@
             font-size: 1.8rem;
             font-weight: 900;
             height: 40px;
+        }
+
+        /* Results History Styles */
+        .history-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--panel);
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+
+        .history-swatch-pair {
+            display: flex;
+            width: 120px;
+            height: 40px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .swatch {
+            flex: 1;
+            height: 100%;
+        }
+
+        .history-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-align: left;
+            flex: 1;
+        }
+
+        .history-score {
+            font-weight: 800;
+            width: 40px;
+            text-align: right;
         }
 
         .hidden { display: none !important; }
@@ -175,7 +215,12 @@
     </div>
 
     <div id="ui-results" class="hidden">
-        <h1 id="final-total">0.0</h1>
+        <p style="color: var(--text-dim); font-size: 0.8rem; margin: 0;">FINAL SCORE</p>
+        <h1 id="final-total" style="margin-top: 5px;">0.0</h1>
+        
+        <div id="history-list" class="history-container">
+            </div>
+
         <button onclick="resetGame()">PLAY AGAIN</button>
     </div>
 </div>
@@ -184,6 +229,7 @@
     let round = 1;
     let totalScore = 0;
     let target = { h: 0, s: 0, l: 0 };
+    let history = []; // Stores round results
     
     const userHalf = document.getElementById('user-half');
     const targetHalf = document.getElementById('target-half');
@@ -199,7 +245,6 @@
             l: Math.floor(Math.random() * 60) + 20
         };
 
-        // Flash target (Increased to 4 seconds)
         targetHalf.style.display = 'none';
         userHalf.style.width = '100%';
         userHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
@@ -225,7 +270,6 @@
         
         userHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
 
-        // Update Slider Gradients (The Dialed Look)
         document.getElementById('sat').style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
         document.getElementById('light').style.background = `linear-gradient(to right, #000, hsl(${h}, ${s}%, 50%), #fff)`;
     }
@@ -235,13 +279,11 @@
         const s = document.getElementById('sat').value;
         const l = document.getElementById('light').value;
 
-        // Reveal
         targetHalf.style.display = 'block';
         targetHalf.style.width = '50%';
         userHalf.style.width = '50%';
         targetHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
 
-        // Scoring
         let hDiff = Math.abs(target.h - h);
         if (hDiff > 180) hDiff = 360 - hDiff;
         const sDiff = Math.abs(target.s - s);
@@ -251,16 +293,23 @@
         let roundScore = Math.max(0, 10 - totalErr);
         roundScore = Math.round(roundScore * 10) / 10;
 
+        // Save to history
+        history.push({
+            target: `hsl(${target.h}, ${target.s}%, ${target.l}%)`,
+            user: `hsl(${h}, ${s}%, ${l}%)`,
+            score: roundScore.toFixed(1)
+        });
+
         totalScore += roundScore;
         scoreDisplay.innerText = roundScore.toFixed(1);
         
-        mainBtn.innerText = "CONTINUE";
-        mainBtn.onclick = nextRound;
+        mainBtn.innerText = (round < 5) ? "CONTINUE" : "VIEW RESULTS";
+        mainBtn.onclick = (round < 5) ? nextRound : showEnd;
     }
 
     function nextRound() {
         round++;
-        document.getElementById('round-num').innerText = Math.min(round, 5);
+        document.getElementById('round-num').innerText = round;
         document.getElementById('total-score').innerText = totalScore.toFixed(1);
         mainBtn.innerText = "SUBMIT MATCH";
         mainBtn.onclick = submit;
@@ -271,11 +320,29 @@
         document.getElementById('ui-play').classList.add('hidden');
         document.getElementById('ui-results').classList.remove('hidden');
         document.getElementById('final-total').innerText = totalScore.toFixed(1) + " / 50";
+        
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = ''; // Clear previous
+
+        history.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'history-item';
+            row.innerHTML = `
+                <div class="history-label">ROUND ${index + 1}</div>
+                <div class="history-swatch-pair">
+                    <div class="swatch" style="background: ${item.target}" title="Target"></div>
+                    <div class="swatch" style="background: ${item.user}" title="Your Match"></div>
+                </div>
+                <div class="history-score">${item.score}</div>
+            `;
+            historyList.appendChild(row);
+        });
     }
 
     function resetGame() {
         round = 1;
         totalScore = 0;
+        history = [];
         document.getElementById('round-num').innerText = "1";
         document.getElementById('total-score').innerText = "0.0";
         document.getElementById('ui-play').classList.remove('hidden');
