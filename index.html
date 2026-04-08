@@ -10,7 +10,6 @@
             --panel: #141414;
             --text: #ffffff;
             --text-dim: #666;
-            --accent-color: #ffffff;
             --accent-pitch: #00ff88;
         }
 
@@ -28,21 +27,18 @@
         }
 
         #home-screen { display: flex; text-align: center; }
-        
         #game-wrapper { display: none; height: 100vh; width: 100vw; z-index: 10; }
 
-        /* --- UI Elements --- */
+        /* --- UI --- */
         .logo { font-size: 0.7rem; letter-spacing: 8px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
         .title { font-size: 3.5rem; font-weight: 900; margin: 0 0 40px 0; letter-spacing: -2px; line-height: 0.9; }
-
         .btn-container { display: flex; gap: 20px; }
         .btn-action {
             background: white; color: black; border: none; padding: 18px 40px;
             font-weight: 800; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
-            text-transform: uppercase; letter-spacing: 1px; transition: transform 0.1s, background 0.2s;
+            text-transform: uppercase; letter-spacing: 1px; transition: transform 0.1s;
         }
         .btn-action:active { transform: scale(0.96); }
-        .btn-action:hover { background: #eee; }
         .btn-secondary { background: transparent; color: white; border: 1px solid white; }
         .btn-pitch { border-color: var(--accent-pitch); color: var(--accent-pitch); }
 
@@ -59,13 +55,18 @@
         .slider-val { font-size: 0.9rem; font-weight: 900; color: var(--text); margin-top: 10px; }
 
         input[type=range].vertical {
-            -webkit-appearance: none; width: 400px; height: 12px; border-radius: 10px;
-            outline: none; transform: rotate(270deg); margin: 180px 0; cursor: pointer; background: #222;
+            -webkit-appearance: none; width: 400px; height: 20px; border-radius: 10px;
+            outline: none; transform: rotate(270deg); margin: 180px 0; cursor: pointer;
+            border: 1px solid #333;
         }
         input[type=range].vertical::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 30px; height: 30px; background: white;
+            -webkit-appearance: none; width: 32px; height: 32px; background: white;
             border: 4px solid black; border-radius: 50%; cursor: pointer;
         }
+
+        /* Color Slider Specifics */
+        #hue { background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); }
+        #sat, #light, #freq { background: #222; }
 
         /* --- Workspace --- */
         #workspace { flex: 1; position: relative; display: flex; background: #000; }
@@ -89,6 +90,8 @@
         #results-screen { z-index: 3000; }
         .history-grid { display: flex; gap: 15px; margin: 40px 0; }
         .history-box { width: 60px; height: 60px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid #333; }
+        .tri-t { position: absolute; width:100%; height:100%; clip-path: polygon(0 0, 0% 100%, 100% 0); }
+        .tri-u { position: absolute; width:100%; height:100%; clip-path: polygon(100% 100%, 0% 100%, 100% 0); }
     </style>
 </head>
 <body>
@@ -138,10 +141,8 @@
                 <div id="countdown">3.000</div>
             </div>
         </div>
-
         <div id="left-half" class="half"></div>
         <div id="right-half" class="half"></div>
-
         <div id="game-ui">
             <div class="info-bar"><span id="mode-text">COLOR</span> &nbsp; | &nbsp; ROUND <span id="round-num">1</span>/5 &nbsp; | &nbsp; TOTAL <span id="total-score">0.0</span></div>
             <button id="main-btn" class="btn-action" onclick="submitMatch()">Submit Match</button>
@@ -151,7 +152,7 @@
 </div>
 
 <div id="results-screen" class="screen">
-    <div class="logo" id="result-type">MISSION COMPLETE</div>
+    <div class="logo">MISSION COMPLETE</div>
     <h1 id="final-total" style="font-size: 8rem; margin: 10px 0;">0.0</h1>
     <div id="history-display" class="history-grid"></div>
     <div class="btn-container">
@@ -161,72 +162,50 @@
 </div>
 
 <script>
-    let mode = 'color'; // 'color' or 'pitch'
-    let round = 1;
-    let totalScore = 0;
-    let history = [];
-    let target = {}; // Stores color {h,s,l} or freq
-    let gameActive = false;
-
-    // Audio Context
+    let mode = 'color', round = 1, totalScore = 0, history = [], target = {}, gameActive = false;
     let audioCtx, targetOsc, userOsc, targetGain, userGain;
 
-    const leftHalf = document.getElementById('left-half');
-    const rightHalf = document.getElementById('right-half');
-    const mainBtn = document.getElementById('main-btn');
-    const scorePopup = document.getElementById('score-popup');
+    const leftHalf = document.getElementById('left-half'), rightHalf = document.getElementById('right-half');
+    const mainBtn = document.getElementById('main-btn'), scorePopup = document.getElementById('score-popup');
 
     function initGame(m) {
         mode = m;
         document.getElementById('home-screen').style.display = 'none';
         document.getElementById('game-wrapper').style.display = 'flex';
         document.getElementById('mode-text').innerText = mode.toUpperCase();
-        
-        // Toggle Sidebar UI
         document.getElementById('color-sliders').style.display = (mode === 'color') ? 'flex' : 'none';
         document.getElementById('pitch-sliders').style.display = (mode === 'pitch') ? 'flex' : 'none';
-
-        if (mode === 'pitch' && !audioCtx) {
-            setupAudio();
-        }
-        
+        if (mode === 'pitch' && !audioCtx) setupAudio();
         resetGame();
     }
 
     function setupAudio() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        targetOsc = audioCtx.createOscillator();
-        targetGain = audioCtx.createGain();
-        targetOsc.connect(targetGain);
-        targetGain.connect(audioCtx.destination);
-        targetGain.gain.value = 0;
-        targetOsc.start();
+        [targetOsc, targetGain] = createOsc();
+        [userOsc, userGain] = createOsc();
+    }
 
-        userOsc = audioCtx.createOscillator();
-        userGain = audioCtx.createGain();
-        userOsc.connect(userGain);
-        userGain.connect(audioCtx.destination);
-        userGain.gain.value = 0;
-        userOsc.start();
+    function createOsc() {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination); g.gain.value = 0; o.start();
+        return [o, g];
     }
 
     function startRound() {
         if (round > 5) return;
-        gameActive = false;
-        mainBtn.disabled = true;
-        mainBtn.innerText = "SUBMIT MATCH";
-        scorePopup.innerText = "";
-        leftHalf.style.backgroundColor = '#000';
-        document.getElementById('overlay-layer').style.display = 'block';
+        gameActive = false; mainBtn.disabled = true; mainBtn.innerText = "SUBMIT MATCH";
+        scorePopup.innerText = ""; leftHalf.style.backgroundColor = '#000';
+        const overlay = document.getElementById('overlay-layer');
+        overlay.style.display = 'block';
 
         if (mode === 'color') {
             target = { h: Math.floor(Math.random() * 360), s: Math.floor(Math.random() * 80) + 10, l: Math.floor(Math.random() * 60) + 20 };
-            document.getElementById('overlay-layer').style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+            overlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
         } else {
             target = Math.floor(Math.random() * 600) + 250;
             targetOsc.frequency.setValueAtTime(target, audioCtx.currentTime);
             targetGain.gain.setTargetAtTime(0.25, audioCtx.currentTime, 0.05);
-            document.getElementById('overlay-layer').style.backgroundColor = '#111';
+            overlay.style.backgroundColor = '#111';
         }
 
         let start = Date.now();
@@ -235,11 +214,9 @@
             document.getElementById('countdown').innerText = (remain / 1000).toFixed(3);
             if (remain <= 0) {
                 clearInterval(timer);
-                document.getElementById('overlay-layer').style.display = 'none';
+                overlay.style.display = 'none';
                 if (mode === 'pitch') targetGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
-                mainBtn.disabled = false;
-                gameActive = true;
-                updateVisuals();
+                mainBtn.disabled = false; gameActive = true; updateVisuals();
             }
         }, 10);
     }
@@ -250,9 +227,13 @@
             document.getElementById('val-h').innerText = h;
             document.getElementById('val-s').innerText = s;
             document.getElementById('val-l').innerText = l;
+            
+            // Dynamic Slider Backgrounds
+            document.getElementById('sat').style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
+            document.getElementById('light').style.background = `linear-gradient(to right, #000, hsl(${h}, ${s}%, 50%), #fff)`;
+            
             rightHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
-        } else {
-            if (!gameActive) return;
+        } else if (gameActive) {
             const f = document.getElementById('freq').value;
             document.getElementById('val-f').innerText = Math.round(f) + "Hz";
             userOsc.frequency.setTargetAtTime(f, audioCtx.currentTime, 0.03);
@@ -261,17 +242,19 @@
     }
 
     function submitMatch() {
-        gameActive = false;
-        mainBtn.disabled = true;
+        gameActive = false; mainBtn.disabled = true;
         let roundScore = 1.0;
+        let userColor = "";
 
         if (mode === 'color') {
             const h = document.getElementById('hue').value, s = document.getElementById('sat').value, l = document.getElementById('light').value;
+            userColor = `hsl(${h}, ${s}%, ${l}%)`;
             leftHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
             let hDiff = Math.abs(target.h - h);
             if (hDiff > 180) hDiff = 360 - hDiff;
             const err = (hDiff / 180 * 7) + (Math.abs(target.s - s) / 100 * 2) + (Math.abs(target.l - l) / 100 * 2);
             roundScore = Math.max(1, 10 - err);
+            history.push({ t: `hsl(${target.h}, ${target.s}%, ${target.l}%)`, u: userColor });
         } else {
             const f = document.getElementById('freq').value;
             targetGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05);
@@ -297,40 +280,40 @@
     }
 
     function nextRound() {
-        round++;
-        document.getElementById('round-num').innerText = round;
-        mainBtn.onclick = submitMatch;
-        startRound();
+        round++; document.getElementById('round-num').innerText = round;
+        mainBtn.onclick = submitMatch; startRound();
     }
 
     function showResults() {
         document.getElementById('results-screen').style.display = 'flex';
         document.getElementById('final-total').innerText = totalScore.toFixed(1);
+        const display = document.getElementById('history-display');
+        display.innerHTML = '';
+        if (mode === 'color') {
+            history.forEach(item => {
+                const box = document.createElement('div'); box.className = 'history-box';
+                box.innerHTML = `<div class="tri-t" style="background:${item.t}"></div><div class="tri-u" style="background:${item.u}"></div>`;
+                display.appendChild(box);
+            });
+        }
     }
 
     function resetGame() {
-        round = 1; totalScore = 0; 
+        round = 1; totalScore = 0; history = [];
         document.getElementById('round-num').innerText = "1";
         document.getElementById('total-score').innerText = "0.0";
         document.getElementById('results-screen').style.display = 'none';
-        mainBtn.onclick = submitMatch;
-        startRound();
+        mainBtn.onclick = submitMatch; startRound();
     }
 
     function goHome() {
-        if (audioCtx) {
-            targetGain.gain.value = 0;
-            userGain.gain.value = 0;
-        }
+        if (audioCtx) { targetGain.gain.value = 0; userGain.gain.value = 0; }
         document.getElementById('results-screen').style.display = 'none';
         document.getElementById('game-wrapper').style.display = 'none';
         document.getElementById('home-screen').style.display = 'flex';
     }
 
-    // Input listeners
-    ['hue', 'sat', 'light', 'freq'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateVisuals);
-    });
+    ['hue', 'sat', 'light', 'freq'].forEach(id => document.getElementById(id).addEventListener('input', updateVisuals));
 </script>
 
 </body>
