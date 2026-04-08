@@ -31,7 +31,7 @@
 
         /* Sidebar with Large Rotated Sliders */
         #sidebar {
-            width: 180px; /* Wider for larger sliders */
+            width: 180px;
             background: var(--panel);
             display: flex;
             flex-direction: row;
@@ -62,12 +62,11 @@
             line-height: 1.4;
         }
 
-        /* Larger Sliders */
         input[type=range].modern-vertical {
             -webkit-appearance: none;
             appearance: none;
-            width: 450px; /* Longer sliders */
-            height: 20px; /* Thicker sliders */
+            width: 450px; 
+            height: 20px; 
             border-radius: 10px;
             outline: none;
             transform: rotate(270deg);
@@ -94,19 +93,27 @@
         #workspace {
             flex: 1;
             position: relative;
-            background: var(--bg);
+            background: #000; /* True black base */
+            display: flex;
         }
 
-        #user-half {
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: 50%;
+        /* Left Side: Target reveal area */
+        #target-half {
+            flex: 1;
             height: 100%;
-            background: #1a1a1a;
-            z-index: 5;
+            background: #000;
+            transition: background-color 0.2s;
         }
 
+        /* Right Side: User color area */
+        #user-half {
+            flex: 1;
+            height: 100%;
+            background: #111;
+            transition: background-color 0.1s;
+        }
+
+        /* Full Screen Overlay for Initial Countdown */
         #target-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -114,7 +121,6 @@
             display: none;
         }
 
-        /* Countdown in the corner */
         #countdown-container {
             position: absolute;
             top: 30px;
@@ -126,7 +132,7 @@
         #countdown {
             font-size: 5rem;
             font-weight: 900;
-            font-variant-numeric: tabular-nums; /* Prevents text jitter */
+            font-variant-numeric: tabular-nums;
             color: white;
             text-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
@@ -224,7 +230,10 @@
                 <div id="countdown">3.000</div>
             </div>
         </div>
+        
+        <div id="target-half"></div>
         <div id="user-half"></div>
+
         <div id="game-ui">
             <div class="round-info">ROUND <span id="round-num">1</span> / 5 &nbsp; | &nbsp; TOTAL <span id="total-score">0.0</span></div>
             <button id="main-btn">SUBMIT MATCH</button>
@@ -247,6 +256,7 @@
     let history = [];
     
     const userHalf = document.getElementById('user-half');
+    const targetHalf = document.getElementById('target-half');
     const targetOverlay = document.getElementById('target-overlay');
     const countdown = document.getElementById('countdown');
     const mainBtn = document.getElementById('main-btn');
@@ -259,7 +269,9 @@
             s: Math.floor(Math.random() * 80) + 10,
             l: Math.floor(Math.random() * 60) + 20
         };
-        targetOverlay.style.width = '100%';
+
+        // 1. Initial State: Hide the left comparison half and show full screen memorization
+        targetHalf.style.backgroundColor = '#000'; 
         targetOverlay.style.display = 'block';
         targetOverlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
         mainBtn.disabled = true;
@@ -272,17 +284,17 @@
             let elapsed = Date.now() - startTime;
             let remaining = Math.max(0, duration - elapsed);
             
-            // Format to 3 decimal places
             countdown.innerText = (remaining / 1000).toFixed(3);
             
             if (remaining <= 0) {
                 clearInterval(timer);
+                // 2. Hide overlay, reveal the workspace (Target side stays black until submit)
                 targetOverlay.style.display = 'none';
                 mainBtn.disabled = false;
-                userHalf.style.backgroundColor = '#1a1a1a';
+                userHalf.style.backgroundColor = '#111';
                 updateUI();
             }
-        }, 10); // Update every 10ms for smooth ms tracking
+        }, 10);
     }
 
     function updateUI() {
@@ -305,10 +317,8 @@
         const s = document.getElementById('sat').value;
         const l = document.getElementById('light').value;
 
-        targetOverlay.style.display = 'block';
-        targetOverlay.style.width = '50%';
-        targetOverlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
-        document.getElementById('countdown-container').style.display = 'none';
+        // 3. Reveal original color on the left half for direct comparison
+        targetHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
 
         let hDiff = Math.abs(target.h - h);
         if (hDiff > 180) hDiff = 360 - hDiff;
@@ -331,7 +341,6 @@
         round++;
         document.getElementById('round-num').innerText = round;
         document.getElementById('total-score').innerText = totalScore.toFixed(1);
-        document.getElementById('countdown-container').style.display = 'block';
         mainBtn.innerText = "SUBMIT MATCH";
         mainBtn.onclick = submit;
         startRound();
@@ -355,7 +364,6 @@
         document.getElementById('round-num').innerText = "1";
         document.getElementById('total-score').innerText = "0.0";
         document.getElementById('results-screen').style.display = 'none';
-        document.getElementById('countdown-container').style.display = 'block';
         scorePopup.innerText = "";
         mainBtn.onclick = submit;
         mainBtn.innerText = "SUBMIT MATCH";
