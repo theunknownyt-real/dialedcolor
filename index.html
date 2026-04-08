@@ -57,8 +57,9 @@
         input[type=range].vertical {
             -webkit-appearance: none; width: 400px; height: 20px; border-radius: 10px;
             outline: none; transform: rotate(270deg); margin: 180px 0; cursor: pointer;
-            border: 1px solid #333;
+            border: 1px solid #333; transition: opacity 0.3s;
         }
+        input[type=range].vertical:disabled { opacity: 0.2; cursor: not-allowed; }
         input[type=range].vertical::-webkit-slider-thumb {
             -webkit-appearance: none; width: 32px; height: 32px; background: white;
             border: 4px solid black; border-radius: 50%; cursor: pointer;
@@ -152,6 +153,7 @@
     const leftHalf = document.getElementById('left-half'), rightHalf = document.getElementById('right-half');
     const mainBtn = document.getElementById('main-btn'), scorePopup = document.getElementById('score-popup');
     const targetHzDisplay = document.getElementById('target-hz'), userHzDisplay = document.getElementById('user-hz');
+    const allSliders = document.querySelectorAll('input[type=range]');
 
     function initGame(m) {
         mode = m;
@@ -162,6 +164,10 @@
         document.getElementById('pitch-sliders').style.display = (mode === 'pitch') ? 'flex' : 'none';
         if (mode === 'pitch' && !audioCtx) setupAudio();
         resetGame();
+    }
+
+    function toggleSliders(enabled) {
+        allSliders.forEach(s => s.disabled = !enabled);
     }
 
     function setupAudio() {
@@ -178,9 +184,25 @@
 
     function startRound() {
         if (round > 5) return;
-        gameActive = false; mainBtn.disabled = true; mainBtn.innerText = "SUBMIT MATCH";
-        scorePopup.innerText = ""; leftHalf.style.backgroundColor = '#000';
-        targetHzDisplay.innerText = ""; userHzDisplay.innerText = "";
+        gameActive = false;
+        toggleSliders(false); // LOCK SLIDERS
+        
+        mainBtn.disabled = true;
+        mainBtn.innerText = "SUBMIT MATCH";
+        scorePopup.innerText = "";
+        leftHalf.style.backgroundColor = '#000';
+        targetHzDisplay.innerText = "";
+        userHzDisplay.innerText = "";
+        
+        // Reset Sliders to neutral state for new round
+        if(mode === 'color') {
+            document.getElementById('hue').value = 180;
+            document.getElementById('sat').value = 50;
+            document.getElementById('light').value = 50;
+        } else {
+            document.getElementById('freq').value = 600;
+        }
+
         const overlay = document.getElementById('overlay-layer');
         overlay.style.display = 'block';
 
@@ -202,7 +224,11 @@
                 clearInterval(timer);
                 overlay.style.display = 'none';
                 if (mode === 'pitch') targetGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
-                mainBtn.disabled = false; gameActive = true; updateVisuals();
+                
+                mainBtn.disabled = false;
+                gameActive = true;
+                toggleSliders(true); // UNLOCK SLIDERS
+                updateVisuals();
             }
         }, 10);
     }
@@ -223,7 +249,9 @@
     }
 
     function submitMatch() {
-        gameActive = false; mainBtn.disabled = true;
+        gameActive = false;
+        toggleSliders(false); // LOCK SLIDERS AGAIN
+        mainBtn.disabled = true;
         let roundScore = 1.0;
         const f = parseFloat(document.getElementById('freq').value);
 
@@ -235,7 +263,6 @@
             roundScore = Math.max(1, 10 - err);
             history.push({ t: `hsl(${target.h}, ${target.s}%, ${target.l}%)`, u: `hsl(${h}, ${s}%, ${l}%)` });
         } else {
-            // Scoring
             const dist = Math.abs(Math.log2(f / target));
             roundScore = Math.max(1, 10 - (dist * 25));
             leftHalf.style.backgroundColor = 'var(--accent-pitch)';
@@ -243,13 +270,12 @@
             userHzDisplay.innerText = Math.round(f) + "Hz";
             history.push({ t: target, u: Math.round(f) });
 
-            // Sequential Playback comparison
             userGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
-            targetGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05); // Play target
+            targetGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05); 
             setTimeout(() => {
                 targetGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
                 setTimeout(() => {
-                    userGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05); // Play user
+                    userGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05); 
                     setTimeout(() => {
                         userGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
                     }, 1000);
@@ -305,7 +331,7 @@
         document.getElementById('home-screen').style.display = 'flex';
     }
 
-    ['hue', 'sat', 'light', 'freq'].forEach(id => document.getElementById(id).addEventListener('input', updateVisuals));
+    allSliders.forEach(s => s.addEventListener('input', updateVisuals));
 </script>
 
 </body>
