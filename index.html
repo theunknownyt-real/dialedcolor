@@ -3,236 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RGB Memory Match</title>
+    <title>Color Match Challenge</title>
     <style>
-        :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --text: #f8fafc;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .game-container {
-            background: var(--card);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            width: 350px;
-            text-align: center;
-        }
-
-        /* The display boxes */
-        .color-displays {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .box {
-            height: 100px;
-            border-radius: 8px;
-            border: 2px solid #334155;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            position: relative;
-        }
-
-        #target-display { background-color: #334155; }
-        #user-display { background-color: #000; }
-
-        .label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px; }
-
-        /* Sliders */
-        .slider-group { margin: 20px 0; }
-        .control { margin-bottom: 15px; }
-        
-        input[type=range] {
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .r-slider { accent-color: #ef4444; }
-        .g-slider { accent-color: #22c55e; }
-        .b-slider { accent-color: #3b82f6; }
-
-        .btn {
-            background: #6366f1;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        .btn:disabled { background: #475569; cursor: not-allowed; }
-
-        #timer-overlay {
-            position: absolute;
-            font-size: 2rem;
-            background: rgba(0,0,0,0.4);
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-        }
-
-        .hidden { display: none !important; }
-        
-        #result {
-            margin-top: 15px;
-            font-weight: bold;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #game-container { background: #2d2d2d; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; width: 400px; }
+        .color-boxes { display: flex; justify-content: space-around; margin-bottom: 20px; height: 150px; }
+        .box { width: 150px; height: 150px; border-radius: 10px; border: 3px solid #444; position: relative; }
+        #target-box { background-color: #555; }
+        #user-box { background-color: hsl(180, 50%, 50%); }
+        .label { margin-top: 5px; font-size: 0.9em; color: #bbb; }
+        .controls { display: flex; flex-direction: column; gap: 15px; margin: 20px 0; }
+        input[type=range] { width: 100%; cursor: pointer; }
+        button { background: #4CAF50; color: white; border: none; padding: 12px 25px; border-radius: 5px; font-size: 1em; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #45a049; }
+        #message { margin-top: 15px; font-weight: bold; min-height: 24px; }
+        .stats { display: flex; justify-content: space-between; width: 100%; margin-bottom: 20px; color: #888; }
+        #final-screen { display: none; }
     </style>
 </head>
 <body>
 
-<div class="game-container">
-    <h2>Memory Match</h2>
-    
-    <div class="color-displays">
-        <div>
-            <div class="label">TARGET</div>
-            <div id="target-display" class="box">
-                <div id="timer-overlay">3</div>
+<div id="game-container">
+    <div class="stats">
+        <span>Round: <span id="round-num">1</span>/5</span>
+        <span>Total: <span id="total-score">0</span>/50</span>
+    </div>
+
+    <div id="play-area">
+        <div class="color-boxes">
+            <div>
+                <div id="target-box" class="box"></div>
+                <div class="label">Target</div>
+            </div>
+            <div>
+                <div id="user-box" class="box"></div>
+                <div class="label">Your Match</div>
             </div>
         </div>
-        <div>
-            <div class="label">YOUR GUESS</div>
-            <div id="user-display" class="box"></div>
+
+        <div class="controls">
+            <label>Color (Hue)</label>
+            <input type="range" id="hue" min="0" max="360" value="180">
+            <label>Brightness</label>
+            <input type="range" id="light" min="0" max="100" value="50">
+            <label>Contrast (Saturation)</label>
+            <input type="range" id="sat" min="0" max="100" value="50">
         </div>
+
+        <button id="action-btn" onclick="handleSubmit()">Submit Match</button>
+        <div id="message">Memorize the color!</div>
     </div>
 
-    <div class="slider-group">
-        <div class="control">
-            <input type="range" id="r-range" class="r-slider" min="0" max="255" value="0">
-        </div>
-        <div class="control">
-            <input type="range" id="g-range" class="g-slider" min="0" max="255" value="0">
-        </div>
-        <div class="control">
-            <input type="range" id="b-range" class="b-slider" min="0" max="255" value="0">
-        </div>
+    <div id="final-screen">
+        <h2>Game Over!</h2>
+        <h1 id="final-score-display">0/50</h1>
+        <button onclick="resetGame()">Play Again</button>
     </div>
-
-    <button id="action-btn" class="btn">Start New Round</button>
-    <div id="result"></div>
 </div>
 
 <script>
-    let targetRGB = { r: 0, g: 0, b: 0 };
-    let gameState = 'waiting'; // waiting, memorizing, guessing, revealed
+    let round = 1;
+    let totalScore = 0;
+    let targetHSL = { h: 0, s: 0, l: 0 };
+    let showingTarget = true;
 
-    const targetBox = document.getElementById('target-display');
-    const userBox = document.getElementById('user-display');
-    const timerOverlay = document.getElementById('timer-overlay');
-    const actionBtn = document.getElementById('action-btn');
-    const resultDiv = document.getElementById('result');
+    const targetBox = document.getElementById('target-box');
+    const userBox = document.getElementById('user-box');
+    const btn = document.getElementById('action-btn');
+    const msg = document.getElementById('message');
 
-    const sliders = {
-        r: document.getElementById('r-range'),
-        g: document.getElementById('g-range'),
-        b: document.getElementById('b-range')
-    };
-
-    function updatePreview() {
-        userBox.style.backgroundColor = `rgb(${sliders.r.value}, ${sliders.g.value}, ${sliders.b.value})`;
-    }
-
-    function startRound() {
-        gameState = 'memorizing';
-        resultDiv.innerText = "";
-        actionBtn.disabled = true;
+    function initRound() {
+        if (round > 5) return showFinalResults();
         
-        // Generate random color
-        targetRGB = {
-            r: Math.floor(Math.random() * 256),
-            g: Math.floor(Math.random() * 256),
-            b: Math.floor(Math.random() * 256)
+        // Generate random target
+        targetHSL = {
+            h: Math.floor(Math.random() * 361),
+            s: Math.floor(Math.random() * 80) + 10,
+            l: Math.floor(Math.random() * 60) + 20
         };
 
-        // Show target
-        targetBox.style.backgroundColor = `rgb(${targetRGB.r}, ${targetRGB.g}, ${targetRGB.b})`;
-        timerOverlay.classList.remove('hidden');
+        // Show target color
+        targetBox.style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+        showingTarget = true;
+        btn.disabled = true;
+        msg.innerText = "Memorizing...";
+
+        // Hide target after 3 seconds
+        setTimeout(() => {
+            targetBox.style.backgroundColor = "#555";
+            showingTarget = false;
+            btn.disabled = false;
+            msg.innerText = "Match it!";
+        }, 3000);
         
-        let timeLeft = 3;
-        timerOverlay.innerText = timeLeft;
-
-        const timer = setInterval(() => {
-            timeLeft--;
-            if (timeLeft > 0) {
-                timerOverlay.innerText = timeLeft;
-            } else {
-                clearInterval(timer);
-                hideTarget();
-            }
-        }, 1000);
+        updateUserBox();
     }
 
-    function hideTarget() {
-        gameState = 'guessing';
-        targetBox.style.backgroundColor = '#334155'; // Reset to neutral
-        timerOverlay.classList.add('hidden');
-        actionBtn.disabled = false;
-        actionBtn.innerText = "Check Result";
+    function updateUserBox() {
+        const h = document.getElementById('hue').value;
+        const s = document.getElementById('sat').value;
+        const l = document.getElementById('light').value;
+        userBox.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
     }
 
-    function checkResult() {
-        gameState = 'revealed';
-        const userR = parseInt(sliders.r.value);
-        const userG = parseInt(sliders.g.value);
-        const userB = parseInt(sliders.b.value);
-
-        // Calculate accuracy (distance formula)
-        const diffR = Math.abs(targetRGB.r - userR);
-        const diffG = Math.abs(targetRGB.g - userG);
-        const diffB = Math.abs(targetRGB.b - userB);
-        const totalDiff = diffR + diffG + diffB;
-        
-        // 0 diff = 100%, 765 diff = 0%
-        const accuracy = Math.max(0, (100 - (totalDiff / 765) * 100)).toFixed(1);
-
-        // Reveal the target color and the hex codes
-        targetBox.style.backgroundColor = `rgb(${targetRGB.r}, ${targetRGB.g}, ${targetRGB.b})`;
-        targetBox.innerHTML = `<span style="color: white; text-shadow: 1px 1px 2px black;">#${rgbToHex(targetRGB.r, targetRGB.g, targetRGB.b)}</span>`;
-        
-        resultDiv.innerHTML = `Accuracy: ${accuracy}%<br><small>R:${targetRGB.r} G:${targetRGB.g} B:${targetRGB.b}</small>`;
-        actionBtn.innerText = "Play Again";
-    }
-
-    function rgbToHex(r, g, b) {
-        return [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
-    }
-
-    actionBtn.addEventListener('click', () => {
-        if (gameState === 'waiting' || gameState === 'revealed') {
-            targetBox.innerHTML = '<div id="timer-overlay">3</div>';
-            startRound();
-        } else if (gameState === 'guessing') {
-            checkResult();
-        }
+    // Add listeners to sliders
+    ['hue', 'sat', 'light'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateUserBox);
     });
 
-    Object.values(sliders).forEach(s => s.addEventListener('input', updatePreview));
+    function handleSubmit() {
+        const h = document.getElementById('hue').value;
+        const s = document.getElementById('sat').value;
+        const l = document.getElementById('light').value;
 
-    // Initialize UI
-    updatePreview();
+        // Calculate difference (Euclidean-ish distance in HSL space)
+        let hDiff = Math.abs(targetHSL.h - h);
+        if (hDiff > 180) hDiff = 360 - hDiff; // Hue is circular
+        const sDiff = Math.abs(targetHSL.s - s);
+        const lDiff = Math.abs(targetHSL.l - l);
+
+        // Normalize error (Max possible error is approx 180 hue, 100 sat, 100 light)
+        const totalErr = (hDiff / 180) + (sDiff / 100) + (lDiff / 100);
+        let roundScore = Math.max(0, 10 - (totalErr * 3.5)); // 3.5 is a difficulty multiplier
+        roundScore = Math.round(roundScore * 10) / 10; // Round to 1 decimal
+
+        totalScore += roundScore;
+        
+        // Show result
+        targetBox.style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+        msg.innerText = `Round Score: ${roundScore.toFixed(1)}/10`;
+        
+        btn.innerText = "Next Round";
+        btn.onclick = nextRound;
+    }
+
+    function nextRound() {
+        round++;
+        document.getElementById('round-num').innerText = Math.min(round, 5);
+        document.getElementById('total-score').innerText = totalScore.toFixed(1);
+        
+        btn.innerText = "Submit Match";
+        btn.onclick = handleSubmit;
+        initRound();
+    }
+
+    function showFinalResults() {
+        document.getElementById('play-area').style.display = 'none';
+        document.getElementById('final-screen').style.display = 'block';
+        document.getElementById('final-score-display').innerText = totalScore.toFixed(1) + "/50";
+    }
+
+    function resetGame() {
+        round = 1;
+        totalScore = 0;
+        document.getElementById('round-num').innerText = "1";
+        document.getElementById('total-score').innerText = "0";
+        document.getElementById('play-area').style.display = 'block';
+        document.getElementById('final-screen').style.display = 'none';
+        btn.innerText = "Submit Match";
+        btn.onclick = handleSubmit;
+        initRound();
+    }
+
+    // Start first round
+    initRound();
 </script>
 
 </body>
