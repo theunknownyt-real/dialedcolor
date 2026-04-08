@@ -6,28 +6,26 @@
     <title>Precision Color Match</title>
     <style>
         :root {
-            --bg: #0f0f0f;
-            --card: #1a1a1a;
-            --accent: #3b82f6;
+            --bg: #0a0a0a;
+            --panel: #141414;
             --text: #ffffff;
-            --text-dim: #71717a;
+            --text-dim: #666;
         }
 
         body {
             margin: 0;
             background-color: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            overflow: hidden;
         }
 
         #game-container {
             width: 100%;
-            max-width: 500px;
+            max-width: 420px;
             padding: 20px;
             text-align: center;
         }
@@ -35,100 +33,108 @@
         .header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 2rem;
-            font-weight: 600;
-            letter-spacing: 1px;
+            margin-bottom: 30px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 2px;
             color: var(--text-dim);
         }
 
-        /* The Big Circle Preview */
+        /* Preview Circle */
         .preview-container {
             position: relative;
-            width: 240px;
-            height: 240px;
-            margin: 0 auto 2rem;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 40px;
         }
 
         .color-circle {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            transition: background-color 0.1s ease;
-            box-shadow: 0 0 40px rgba(0,0,0,0.5);
             display: flex;
             overflow: hidden;
+            background: #1a1a1a;
+            box-shadow: 0 0 60px rgba(0,0,0,0.8);
         }
 
-        .half-circle {
-            width: 50%;
+        .half {
             height: 100%;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.1s ease;
         }
 
-        #target-half { display: none; } /* Hidden until submission */
+        #target-half { width: 0%; display: none; }
+        #user-half { width: 100%; }
 
-        /* Sliders */
+        /* Sliders Styling */
         .controls {
             display: flex;
             flex-direction: column;
             gap: 25px;
-            margin-bottom: 2rem;
+            margin-bottom: 35px;
         }
 
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .label-row {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--text-dim);
+            font-size: 0.7rem;
+            font-weight: 700;
             text-transform: uppercase;
+            color: var(--text-dim);
         }
 
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
-            height: 6px;
-            background: #333;
-            border-radius: 3px;
+            height: 12px;
+            border-radius: 6px;
             outline: none;
+            border: 1px solid #333;
         }
 
+        /* Custom Thumb */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: var(--text);
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 2px solid black;
             border-radius: 50%;
             cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* Buttons */
+        /* Dynamic Gradients */
+        #hue { background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); }
+        
         button {
             width: 100%;
-            padding: 16px;
-            border-radius: 12px;
+            padding: 18px;
+            border-radius: 8px;
             border: none;
-            background: var(--text);
+            background: white;
             color: black;
-            font-weight: 700;
-            font-size: 1rem;
+            font-weight: 800;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
+            transition: all 0.2s;
         }
 
-        button:active { transform: scale(0.98); }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.2); }
+        button:disabled { opacity: 0.2; }
 
-        #score-popup {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-top: 1rem;
-            min-height: 2rem;
+        #score-display {
+            margin-top: 20px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            height: 40px;
         }
 
         .hidden { display: none !important; }
@@ -138,18 +144,18 @@
 
 <div id="game-container">
     <div class="header">
-        <span>ROUND <span id="round-num">1</span>/5</span>
-        <span>TOTAL <span id="total-score">0.0</span></span>
+        <span>ROUND <span id="round-num">1</span> / 5</span>
+        <span>TOTAL: <span id="total-score">0.0</span></span>
     </div>
 
     <div class="preview-container">
-        <div class="color-circle" id="main-circle">
-            <div id="target-half" class="half-circle"></div>
-            <div id="user-half" class="half-circle" style="width: 100%;"></div>
+        <div class="color-circle">
+            <div id="target-half" class="half"></div>
+            <div id="user-half" class="half"></div>
         </div>
     </div>
 
-    <div id="play-ui">
+    <div id="ui-play">
         <div class="controls">
             <div class="control-group">
                 <div class="label-row"><span>Hue</span><span id="v-hue">180</span></div>
@@ -164,13 +170,12 @@
                 <input type="range" id="light" min="0" max="100" value="50">
             </div>
         </div>
-
         <button id="main-btn">SUBMIT MATCH</button>
-        <div id="score-popup"></div>
+        <div id="score-display"></div>
     </div>
 
-    <div id="results-ui" class="hidden">
-        <h2 id="final-msg">GAME OVER</h2>
+    <div id="ui-results" class="hidden">
+        <h1 id="final-total">0.0</h1>
         <button onclick="resetGame()">PLAY AGAIN</button>
     </div>
 </div>
@@ -183,34 +188,33 @@
     const userHalf = document.getElementById('user-half');
     const targetHalf = document.getElementById('target-half');
     const mainBtn = document.getElementById('main-btn');
-    const scorePopup = document.getElementById('score-popup');
+    const scoreDisplay = document.getElementById('score-display');
 
     function startRound() {
-        if (round > 5) return endGame();
+        if (round > 5) return showEnd();
 
-        // 1. Generate Target
         target = {
             h: Math.floor(Math.random() * 360),
-            s: Math.floor(Math.random() * 70) + 15,
+            s: Math.floor(Math.random() * 80) + 10,
             l: Math.floor(Math.random() * 60) + 20
         };
 
-        // 2. Flash Target
+        // Flash target (Increased to 4 seconds)
         targetHalf.style.display = 'none';
         userHalf.style.width = '100%';
         userHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
         mainBtn.disabled = true;
-        scorePopup.innerText = "MEMORIZE...";
+        scoreDisplay.innerText = "MEMORIZE...";
 
         setTimeout(() => {
-            userHalf.style.backgroundColor = '#222'; // Back to neutral
-            updateUserColor();
+            userHalf.style.backgroundColor = '#1a1a1a';
+            updateUI();
             mainBtn.disabled = false;
-            scorePopup.innerText = "";
-        }, 2000);
+            scoreDisplay.innerText = "";
+        }, 4000); 
     }
 
-    function updateUserColor() {
+    function updateUI() {
         const h = document.getElementById('hue').value;
         const s = document.getElementById('sat').value;
         const l = document.getElementById('light').value;
@@ -220,51 +224,53 @@
         document.getElementById('v-light').innerText = l;
         
         userHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
+
+        // Update Slider Gradients (The Dialed Look)
+        document.getElementById('sat').style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
+        document.getElementById('light').style.background = `linear-gradient(to right, #000, hsl(${h}, ${s}%, 50%), #fff)`;
     }
 
-    function submitMatch() {
+    function submit() {
         const h = document.getElementById('hue').value;
         const s = document.getElementById('sat').value;
         const l = document.getElementById('light').value;
 
-        // Reveal Target side-by-side
+        // Reveal
         targetHalf.style.display = 'block';
-        targetHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+        targetHalf.style.width = '50%';
         userHalf.style.width = '50%';
+        targetHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
 
-        // Scoring Logic (0-10)
+        // Scoring
         let hDiff = Math.abs(target.h - h);
         if (hDiff > 180) hDiff = 360 - hDiff;
         const sDiff = Math.abs(target.s - s);
         const lDiff = Math.abs(target.l - l);
 
-        // Weighted error
-        const totalErr = (hDiff / 180 * 5) + (sDiff / 100 * 2.5) + (lDiff / 100 * 2.5);
+        const totalErr = (hDiff / 180 * 6) + (sDiff / 100 * 2) + (lDiff / 100 * 2);
         let roundScore = Math.max(0, 10 - totalErr);
         roundScore = Math.round(roundScore * 10) / 10;
 
         totalScore += roundScore;
-        scorePopup.innerText = `+${roundScore.toFixed(1)}`;
+        scoreDisplay.innerText = roundScore.toFixed(1);
         
-        mainBtn.innerText = "NEXT ROUND";
+        mainBtn.innerText = "CONTINUE";
         mainBtn.onclick = nextRound;
     }
 
     function nextRound() {
         round++;
-        if (round > 5) return endGame();
-        
-        document.getElementById('round-num').innerText = round;
+        document.getElementById('round-num').innerText = Math.min(round, 5);
         document.getElementById('total-score').innerText = totalScore.toFixed(1);
         mainBtn.innerText = "SUBMIT MATCH";
-        mainBtn.onclick = submitMatch;
+        mainBtn.onclick = submit;
         startRound();
     }
 
-    function endGame() {
-        document.getElementById('play-ui').classList.add('hidden');
-        document.getElementById('results-ui').classList.remove('hidden');
-        document.getElementById('final-msg').innerText = `FINAL SCORE: ${totalScore.toFixed(1)}/50`;
+    function showEnd() {
+        document.getElementById('ui-play').classList.add('hidden');
+        document.getElementById('ui-results').classList.remove('hidden');
+        document.getElementById('final-total').innerText = totalScore.toFixed(1) + " / 50";
     }
 
     function resetGame() {
@@ -272,18 +278,17 @@
         totalScore = 0;
         document.getElementById('round-num').innerText = "1";
         document.getElementById('total-score').innerText = "0.0";
-        document.getElementById('play-ui').classList.remove('hidden');
-        document.getElementById('results-ui').classList.add('hidden');
-        mainBtn.onclick = submitMatch;
+        document.getElementById('ui-play').classList.remove('hidden');
+        document.getElementById('ui-results').classList.add('hidden');
+        mainBtn.onclick = submit;
         startRound();
     }
 
-    // Input Listeners
     ['hue', 'sat', 'light'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateUserColor);
+        document.getElementById(id).addEventListener('input', updateUI);
     });
 
-    mainBtn.onclick = submitMatch;
+    mainBtn.onclick = submit;
     startRound();
 </script>
 
