@@ -3,223 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hex Guessing Game</title>
+    <title>RGB Memory Match</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #ffffff;
-            --accent: #bb86fc;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            padding: 20px;
+            height: 100vh;
+            margin: 0;
         }
 
-        .container {
-            max-width: 500px;
-            width: 100%;
+        .game-container {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 350px;
             text-align: center;
         }
 
-        #target-box {
-            width: 100%;
-            height: 150px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 2px solid #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            text-shadow: 0px 0px 5px rgba(0,0,0,0.5);
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        input[type="text"] {
-            flex-grow: 1;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #2c2c2c;
-            color: white;
-            font-size: 1rem;
-            text-transform: uppercase;
-        }
-
-        button {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            background-color: var(--accent);
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .guess-row {
+        /* The display boxes */
+        .color-displays {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-            animation: fadeIn 0.5s ease;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        .guess-cell {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 6px;
+        .box {
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid #334155;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-weight: bold;
+            position: relative;
         }
 
-        .color-preview {
+        #target-display { background-color: #334155; }
+        #user-display { background-color: #000; }
+
+        .label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px; }
+
+        /* Sliders */
+        .slider-group { margin: 20px 0; }
+        .control { margin-bottom: 15px; }
+        
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .r-slider { accent-color: #ef4444; }
+        .g-slider { accent-color: #22c55e; }
+        .b-slider { accent-color: #3b82f6; }
+
+        .btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn:disabled { background: #475569; cursor: not-allowed; }
+
+        #timer-overlay {
+            position: absolute;
+            font-size: 2rem;
+            background: rgba(0,0,0,0.4);
             width: 100%;
             height: 100%;
-            border-radius: 4px;
-            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
         }
 
-        .indicator {
+        .hidden { display: none !important; }
+        
+        #result {
+            margin-top: 15px;
             font-weight: bold;
-            margin-top: 5px;
-        }
-
-        .up { color: #ff4d4d; }
-        .down { color: #4d94ff; }
-        .correct { color: #4caf50; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Hex Guess</h1>
-        <p>Guess the color of the box below!</p>
-        
-        <div id="target-box">?</div>
-
-        <div class="input-group">
-            <input type="text" id="guess-input" placeholder="#000000" maxlength="7">
-            <button id="submit-btn">Guess</button>
-        </div>
-
-        <div id="feedback-area">
+<div class="game-container">
+    <h2>Memory Match</h2>
+    
+    <div class="color-displays">
+        <div>
+            <div class="label">TARGET</div>
+            <div id="target-display" class="box">
+                <div id="timer-overlay">3</div>
             </div>
+        </div>
+        <div>
+            <div class="label">YOUR GUESS</div>
+            <div id="user-display" class="box"></div>
+        </div>
     </div>
 
-    <script>
-        let targetHex = "";
-        const targetBox = document.getElementById('target-box');
-        const input = document.getElementById('guess-input');
-        const submitBtn = document.getElementById('submit-btn');
-        const feedbackArea = document.getElementById('feedback-area');
+    <div class="slider-group">
+        <div class="control">
+            <input type="range" id="r-range" class="r-slider" min="0" max="255" value="0">
+        </div>
+        <div class="control">
+            <input type="range" id="g-range" class="g-slider" min="0" max="255" value="0">
+        </div>
+        <div class="control">
+            <input type="range" id="b-range" class="b-slider" min="0" max="255" value="0">
+        </div>
+    </div>
 
+    <button id="action-btn" class="btn">Start New Round</button>
+    <div id="result"></div>
+</div>
+
+<script>
+    let targetRGB = { r: 0, g: 0, b: 0 };
+    let gameState = 'waiting'; // waiting, memorizing, guessing, revealed
+
+    const targetBox = document.getElementById('target-display');
+    const userBox = document.getElementById('user-display');
+    const timerOverlay = document.getElementById('timer-overlay');
+    const actionBtn = document.getElementById('action-btn');
+    const resultDiv = document.getElementById('result');
+
+    const sliders = {
+        r: document.getElementById('r-range'),
+        g: document.getElementById('g-range'),
+        b: document.getElementById('b-range')
+    };
+
+    function updatePreview() {
+        userBox.style.backgroundColor = `rgb(${sliders.r.value}, ${sliders.g.value}, ${sliders.b.value})`;
+    }
+
+    function startRound() {
+        gameState = 'memorizing';
+        resultDiv.innerText = "";
+        actionBtn.disabled = true;
+        
         // Generate random color
-        function initGame() {
-            const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-            targetHex = `#${randomColor}`.toUpperCase();
-            targetBox.style.backgroundColor = targetHex;
-        }
+        targetRGB = {
+            r: Math.floor(Math.random() * 256),
+            g: Math.floor(Math.random() * 256),
+            b: Math.floor(Math.random() * 256)
+        };
 
-        // Helper to convert hex to RGB
-        function hexToRgb(hex) {
-            const r = parseInt(hex.substring(1, 3), 16);
-            const g = parseInt(hex.substring(3, 5), 16);
-            const b = parseInt(hex.substring(5, 7), 16);
-            return { r, g, b };
-        }
+        // Show target
+        targetBox.style.backgroundColor = `rgb(${targetRGB.r}, ${targetRGB.g}, ${targetRGB.b})`;
+        timerOverlay.classList.remove('hidden');
+        
+        let timeLeft = 3;
+        timerOverlay.innerText = timeLeft;
 
-        function handleGuess() {
-            let val = input.value.trim();
-            if (!val.startsWith('#')) val = '#' + val;
-            
-            // Basic validation
-            if (!/^#[0-9A-F]{6}$/i.test(val)) {
-                alert("Please enter a valid 6-digit hex code (e.g., #FFFFFF)");
-                return;
+        const timer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft > 0) {
+                timerOverlay.innerText = timeLeft;
+            } else {
+                clearInterval(timer);
+                hideTarget();
             }
+        }, 1000);
+    }
 
-            const guessRgb = hexToRgb(val.toUpperCase());
-            const targetRgb = hexToRgb(targetHex);
-            
-            displayGuess(val.toUpperCase(), guessRgb, targetRgb);
-            input.value = "";
+    function hideTarget() {
+        gameState = 'guessing';
+        targetBox.style.backgroundColor = '#334155'; // Reset to neutral
+        timerOverlay.classList.add('hidden');
+        actionBtn.disabled = false;
+        actionBtn.innerText = "Check Result";
+    }
 
-            if (val.toUpperCase() === targetHex) {
-                targetBox.innerText = targetHex;
-                alert("You got it!");
-                submitBtn.disabled = true;
-            }
+    function checkResult() {
+        gameState = 'revealed';
+        const userR = parseInt(sliders.r.value);
+        const userG = parseInt(sliders.g.value);
+        const userB = parseInt(sliders.b.value);
+
+        // Calculate accuracy (distance formula)
+        const diffR = Math.abs(targetRGB.r - userR);
+        const diffG = Math.abs(targetRGB.g - userG);
+        const diffB = Math.abs(targetRGB.b - userB);
+        const totalDiff = diffR + diffG + diffB;
+        
+        // 0 diff = 100%, 765 diff = 0%
+        const accuracy = Math.max(0, (100 - (totalDiff / 765) * 100)).toFixed(1);
+
+        // Reveal the target color and the hex codes
+        targetBox.style.backgroundColor = `rgb(${targetRGB.r}, ${targetRGB.g}, ${targetRGB.b})`;
+        targetBox.innerHTML = `<span style="color: white; text-shadow: 1px 1px 2px black;">#${rgbToHex(targetRGB.r, targetRGB.g, targetRGB.b)}</span>`;
+        
+        resultDiv.innerHTML = `Accuracy: ${accuracy}%<br><small>R:${targetRGB.r} G:${targetRGB.g} B:${targetRGB.b}</small>`;
+        actionBtn.innerText = "Play Again";
+    }
+
+    function rgbToHex(r, g, b) {
+        return [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    actionBtn.addEventListener('click', () => {
+        if (gameState === 'waiting' || gameState === 'revealed') {
+            targetBox.innerHTML = '<div id="timer-overlay">3</div>';
+            startRound();
+        } else if (gameState === 'guessing') {
+            checkResult();
         }
+    });
 
-        function getIndicator(guess, target) {
-            if (guess < target) return { symbol: '↑', class: 'up' };
-            if (guess > target) return { symbol: '↓', class: 'down' };
-            return { symbol: '✓', class: 'correct' };
-        }
+    Object.values(sliders).forEach(s => s.addEventListener('input', updatePreview));
 
-        function displayGuess(hex, guessRgb, targetRgb) {
-            const row = document.createElement('div');
-            row.className = 'guess-row';
+    // Initialize UI
+    updatePreview();
+</script>
 
-            const channels = [
-                { name: 'R', val: guessRgb.r, target: targetRgb.r },
-                { name: 'G', val: guessRgb.g, target: targetRgb.g },
-                { name: 'B', val: guessRgb.b, target: targetRgb.b }
-            ];
-
-            // Color Preview Cell
-            const colorCell = document.createElement('div');
-            colorCell.className = 'guess-cell';
-            colorCell.innerHTML = `<div class="color-preview" style="background-color: ${hex}"></div><span>${hex}</span>`;
-            row.appendChild(colorCell);
-
-            // R, G, B Indicators
-            channels.forEach(channel => {
-                const ind = getIndicator(channel.val, channel.target);
-                const cell = document.createElement('div');
-                cell.className = 'guess-cell';
-                cell.innerHTML = `
-                    <span>${channel.name}: ${channel.val}</span>
-                    <span class="indicator ${ind.class}">${ind.symbol}</span>
-                `;
-                row.appendChild(cell);
-            });
-
-            feedbackArea.prepend(row);
-        }
-
-        submitBtn.addEventListener('click', handleGuess);
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleGuess();
-        });
-
-        initGame();
-    </script>
 </body>
 </html>
