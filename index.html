@@ -3,170 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Match Challenge</title>
+    <title>Precision Color Match</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        #game-container { background: #2d2d2d; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; width: 400px; }
-        .color-boxes { display: flex; justify-content: space-around; margin-bottom: 20px; height: 150px; }
-        .box { width: 150px; height: 150px; border-radius: 10px; border: 3px solid #444; position: relative; }
-        #target-box { background-color: #555; }
-        #user-box { background-color: hsl(180, 50%, 50%); }
-        .label { margin-top: 5px; font-size: 0.9em; color: #bbb; }
-        .controls { display: flex; flex-direction: column; gap: 15px; margin: 20px 0; }
-        input[type=range] { width: 100%; cursor: pointer; }
-        button { background: #4CAF50; color: white; border: none; padding: 12px 25px; border-radius: 5px; font-size: 1em; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #45a049; }
-        #message { margin-top: 15px; font-weight: bold; min-height: 24px; }
-        .stats { display: flex; justify-content: space-between; width: 100%; margin-bottom: 20px; color: #888; }
-        #final-screen { display: none; }
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --accent: #3b82f6;
+            --text: #ffffff;
+            --text-dim: #71717a;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        /* The Big Circle Preview */
+        .preview-container {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            margin: 0 auto 2rem;
+        }
+
+        .color-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transition: background-color 0.1s ease;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .half-circle {
+            width: 50%;
+            height: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        #target-half { display: none; } /* Hidden until submission */
+
+        /* Sliders */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--text);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            background: var(--text);
+            color: black;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        #score-popup {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-top: 1rem;
+            min-height: 2rem;
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div class="stats">
-        <span>Round: <span id="round-num">1</span>/5</span>
-        <span>Total: <span id="total-score">0</span>/50</span>
+    <div class="header">
+        <span>ROUND <span id="round-num">1</span>/5</span>
+        <span>TOTAL <span id="total-score">0.0</span></span>
     </div>
 
-    <div id="play-area">
-        <div class="color-boxes">
-            <div>
-                <div id="target-box" class="box"></div>
-                <div class="label">Target</div>
-            </div>
-            <div>
-                <div id="user-box" class="box"></div>
-                <div class="label">Your Match</div>
-            </div>
+    <div class="preview-container">
+        <div class="color-circle" id="main-circle">
+            <div id="target-half" class="half-circle"></div>
+            <div id="user-half" class="half-circle" style="width: 100%;"></div>
         </div>
+    </div>
 
+    <div id="play-ui">
         <div class="controls">
-            <label>Color (Hue)</label>
-            <input type="range" id="hue" min="0" max="360" value="180">
-            <label>Brightness</label>
-            <input type="range" id="light" min="0" max="100" value="50">
-            <label>Contrast (Saturation)</label>
-            <input type="range" id="sat" min="0" max="100" value="50">
+            <div class="control-group">
+                <div class="label-row"><span>Hue</span><span id="v-hue">180</span></div>
+                <input type="range" id="hue" min="0" max="360" value="180">
+            </div>
+            <div class="control-group">
+                <div class="label-row"><span>Saturation</span><span id="v-sat">50</span></div>
+                <input type="range" id="sat" min="0" max="100" value="50">
+            </div>
+            <div class="control-group">
+                <div class="label-row"><span>Lightness</span><span id="v-light">50</span></div>
+                <input type="range" id="light" min="0" max="100" value="50">
+            </div>
         </div>
 
-        <button id="action-btn" onclick="handleSubmit()">Submit Match</button>
-        <div id="message">Memorize the color!</div>
+        <button id="main-btn">SUBMIT MATCH</button>
+        <div id="score-popup"></div>
     </div>
 
-    <div id="final-screen">
-        <h2>Game Over!</h2>
-        <h1 id="final-score-display">0/50</h1>
-        <button onclick="resetGame()">Play Again</button>
+    <div id="results-ui" class="hidden">
+        <h2 id="final-msg">GAME OVER</h2>
+        <button onclick="resetGame()">PLAY AGAIN</button>
     </div>
 </div>
 
 <script>
     let round = 1;
     let totalScore = 0;
-    let targetHSL = { h: 0, s: 0, l: 0 };
-    let showingTarget = true;
+    let target = { h: 0, s: 0, l: 0 };
+    
+    const userHalf = document.getElementById('user-half');
+    const targetHalf = document.getElementById('target-half');
+    const mainBtn = document.getElementById('main-btn');
+    const scorePopup = document.getElementById('score-popup');
 
-    const targetBox = document.getElementById('target-box');
-    const userBox = document.getElementById('user-box');
-    const btn = document.getElementById('action-btn');
-    const msg = document.getElementById('message');
+    function startRound() {
+        if (round > 5) return endGame();
 
-    function initRound() {
-        if (round > 5) return showFinalResults();
-        
-        // Generate random target
-        targetHSL = {
-            h: Math.floor(Math.random() * 361),
-            s: Math.floor(Math.random() * 80) + 10,
+        // 1. Generate Target
+        target = {
+            h: Math.floor(Math.random() * 360),
+            s: Math.floor(Math.random() * 70) + 15,
             l: Math.floor(Math.random() * 60) + 20
         };
 
-        // Show target color
-        targetBox.style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
-        showingTarget = true;
-        btn.disabled = true;
-        msg.innerText = "Memorizing...";
+        // 2. Flash Target
+        targetHalf.style.display = 'none';
+        userHalf.style.width = '100%';
+        userHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+        mainBtn.disabled = true;
+        scorePopup.innerText = "MEMORIZE...";
 
-        // Hide target after 3 seconds
         setTimeout(() => {
-            targetBox.style.backgroundColor = "#555";
-            showingTarget = false;
-            btn.disabled = false;
-            msg.innerText = "Match it!";
-        }, 3000);
+            userHalf.style.backgroundColor = '#222'; // Back to neutral
+            updateUserColor();
+            mainBtn.disabled = false;
+            scorePopup.innerText = "";
+        }, 2000);
+    }
+
+    function updateUserColor() {
+        const h = document.getElementById('hue').value;
+        const s = document.getElementById('sat').value;
+        const l = document.getElementById('light').value;
         
-        updateUserBox();
+        document.getElementById('v-hue').innerText = h;
+        document.getElementById('v-sat').innerText = s;
+        document.getElementById('v-light').innerText = l;
+        
+        userHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
     }
 
-    function updateUserBox() {
-        const h = document.getElementById('hue').value;
-        const s = document.getElementById('sat').value;
-        const l = document.getElementById('light').value;
-        userBox.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
-    }
-
-    // Add listeners to sliders
-    ['hue', 'sat', 'light'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateUserBox);
-    });
-
-    function handleSubmit() {
+    function submitMatch() {
         const h = document.getElementById('hue').value;
         const s = document.getElementById('sat').value;
         const l = document.getElementById('light').value;
 
-        // Calculate difference (Euclidean-ish distance in HSL space)
-        let hDiff = Math.abs(targetHSL.h - h);
-        if (hDiff > 180) hDiff = 360 - hDiff; // Hue is circular
-        const sDiff = Math.abs(targetHSL.s - s);
-        const lDiff = Math.abs(targetHSL.l - l);
+        // Reveal Target side-by-side
+        targetHalf.style.display = 'block';
+        targetHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+        userHalf.style.width = '50%';
 
-        // Normalize error (Max possible error is approx 180 hue, 100 sat, 100 light)
-        const totalErr = (hDiff / 180) + (sDiff / 100) + (lDiff / 100);
-        let roundScore = Math.max(0, 10 - (totalErr * 3.5)); // 3.5 is a difficulty multiplier
-        roundScore = Math.round(roundScore * 10) / 10; // Round to 1 decimal
+        // Scoring Logic (0-10)
+        let hDiff = Math.abs(target.h - h);
+        if (hDiff > 180) hDiff = 360 - hDiff;
+        const sDiff = Math.abs(target.s - s);
+        const lDiff = Math.abs(target.l - l);
+
+        // Weighted error
+        const totalErr = (hDiff / 180 * 5) + (sDiff / 100 * 2.5) + (lDiff / 100 * 2.5);
+        let roundScore = Math.max(0, 10 - totalErr);
+        roundScore = Math.round(roundScore * 10) / 10;
 
         totalScore += roundScore;
+        scorePopup.innerText = `+${roundScore.toFixed(1)}`;
         
-        // Show result
-        targetBox.style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
-        msg.innerText = `Round Score: ${roundScore.toFixed(1)}/10`;
-        
-        btn.innerText = "Next Round";
-        btn.onclick = nextRound;
+        mainBtn.innerText = "NEXT ROUND";
+        mainBtn.onclick = nextRound;
     }
 
     function nextRound() {
         round++;
-        document.getElementById('round-num').innerText = Math.min(round, 5);
-        document.getElementById('total-score').innerText = totalScore.toFixed(1);
+        if (round > 5) return endGame();
         
-        btn.innerText = "Submit Match";
-        btn.onclick = handleSubmit;
-        initRound();
+        document.getElementById('round-num').innerText = round;
+        document.getElementById('total-score').innerText = totalScore.toFixed(1);
+        mainBtn.innerText = "SUBMIT MATCH";
+        mainBtn.onclick = submitMatch;
+        startRound();
     }
 
-    function showFinalResults() {
-        document.getElementById('play-area').style.display = 'none';
-        document.getElementById('final-screen').style.display = 'block';
-        document.getElementById('final-score-display').innerText = totalScore.toFixed(1) + "/50";
+    function endGame() {
+        document.getElementById('play-ui').classList.add('hidden');
+        document.getElementById('results-ui').classList.remove('hidden');
+        document.getElementById('final-msg').innerText = `FINAL SCORE: ${totalScore.toFixed(1)}/50`;
     }
 
     function resetGame() {
         round = 1;
         totalScore = 0;
         document.getElementById('round-num').innerText = "1";
-        document.getElementById('total-score').innerText = "0";
-        document.getElementById('play-area').style.display = 'block';
-        document.getElementById('final-screen').style.display = 'none';
-        btn.innerText = "Submit Match";
-        btn.onclick = handleSubmit;
-        initRound();
+        document.getElementById('total-score').innerText = "0.0";
+        document.getElementById('play-ui').classList.remove('hidden');
+        document.getElementById('results-ui').classList.add('hidden');
+        mainBtn.onclick = submitMatch;
+        startRound();
     }
 
-    // Start first round
-    initRound();
+    // Input Listeners
+    ['hue', 'sat', 'light'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateUserColor);
+    });
+
+    mainBtn.onclick = submitMatch;
+    startRound();
 </script>
 
 </body>
