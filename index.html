@@ -29,61 +29,66 @@
             width: 100vw;
         }
 
-        /* Sidebar with Dynamic Sliders */
+        /* Sidebar with Rotated Sliders */
         #sidebar {
-            width: 110px;
+            width: 120px;
             background: var(--panel);
             display: flex;
-            flex-direction: column;
+            flex-direction: row; /* Layout containers for rotated elements */
+            justify-content: space-around;
             align-items: center;
-            padding: 30px 0;
+            padding: 0 10px;
             border-right: 1px solid #222;
             z-index: 100;
         }
 
-        .slider-container {
-            flex: 1;
+        .slider-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            gap: 15px;
+            justify-content: center;
+            height: 100%;
+            width: 30px;
         }
 
         .slider-label {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-dim);
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
+            margin-bottom: 10px;
+            height: 50px;
+            text-align: center;
         }
 
-        input[type=range].vertical {
+        /* The Fix: Standard slider rotated 270 degrees */
+        input[type=range].modern-vertical {
             -webkit-appearance: none;
-            width: 12px;
-            height: 65%;
+            appearance: none;
+            width: 300px; /* This is the 'height' when rotated */
+            height: 12px;
             border-radius: 6px;
             outline: none;
-            cursor: crosshair;
+            transform: rotate(270deg);
+            margin: 140px 0; /* Offsets for the rotation */
+            cursor: pointer;
             border: 1px solid #333;
         }
 
-        /* Thumb Styling */
-        input[type=range].vertical::-webkit-slider-thumb {
+        input[type=range].modern-vertical::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+            appearance: none;
+            width: 24px;
+            height: 24px;
             background: white;
-            border: 2px solid black;
+            border: 3px solid black;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* Initial Gradients */
-        #hue { background: linear-gradient(to bottom, #ff0000, #ff00ff, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000); }
+        #hue { background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); }
 
         /* Main Workspace */
         #workspace {
@@ -100,7 +105,6 @@
             height: 100%;
             background: #1a1a1a;
             z-index: 5;
-            transition: background-color 0.1s;
         }
 
         #target-overlay {
@@ -116,7 +120,6 @@
             font-size: 10rem;
             font-weight: 900;
             color: white;
-            text-shadow: 0 10px 40px rgba(0,0,0,0.4);
             pointer-events: none;
         }
 
@@ -146,10 +149,9 @@
             font-weight: 800;
             border-radius: 2px;
             cursor: pointer;
-            letter-spacing: 1px;
         }
 
-        #main-btn:disabled { opacity: 0; pointer-events: none; }
+        #main-btn:disabled { opacity: 0; }
 
         #score-popup {
             font-size: 4rem;
@@ -184,31 +186,25 @@
             overflow: hidden;
         }
 
-        .tri-target {
-            position: absolute; width: 100%; height: 100%;
-            clip-path: polygon(0 0, 0% 100%, 100% 0);
-        }
-        .tri-user {
-            position: absolute; width: 100%; height: 100%;
-            clip-path: polygon(100% 100%, 0% 100%, 100% 0);
-        }
+        .tri-target { position: absolute; width: 100%; height: 100%; clip-path: polygon(0 0, 0% 100%, 100% 0); }
+        .tri-user { position: absolute; width: 100%; height: 100%; clip-path: polygon(100% 100%, 0% 100%, 100% 0); }
     </style>
 </head>
 <body>
 
 <div id="game-wrapper">
     <div id="sidebar">
-        <div class="slider-container">
-            <span class="slider-label">HUE <span id="val-h">180</span></span>
-            <input type="range" id="hue" class="vertical" min="0" max="360" value="180">
+        <div class="slider-wrapper">
+            <div class="slider-label">HUE<br><span id="val-h">180</span></div>
+            <input type="range" id="hue" class="modern-vertical" min="0" max="360" value="180">
         </div>
-        <div class="slider-container">
-            <span class="slider-label">SAT <span id="val-s">50</span></span>
-            <input type="range" id="sat" class="vertical" min="0" max="100" value="50">
+        <div class="slider-wrapper">
+            <div class="slider-label">SAT<br><span id="val-s">50</span></div>
+            <input type="range" id="sat" class="modern-vertical" min="0" max="100" value="50">
         </div>
-        <div class="slider-container">
-            <span class="slider-label">LIT <span id="val-l">50</span></span>
-            <input type="range" id="light" class="vertical" min="0" max="100" value="50">
+        <div class="slider-wrapper">
+            <div class="slider-label">LIT<br><span id="val-l">50</span></div>
+            <input type="range" id="light" class="modern-vertical" min="0" max="100" value="50">
         </div>
     </div>
 
@@ -223,7 +219,7 @@
     </div>
 
     <div id="results-screen">
-        <p style="color: var(--text-dim); letter-spacing: 4px; font-size: 0.8rem;">MISSION COMPLETE</p>
+        <p style="color: var(--text-dim); letter-spacing: 4px; font-size: 0.8rem;">FINAL PERFORMANCE</p>
         <h1 id="final-total" style="font-size: 6rem; margin: 10px 0;">0.0</h1>
         <div id="results-grid" class="results-grid"></div>
         <button onclick="resetGame()" style="padding: 15px 40px; font-weight: 800; cursor: pointer; background: white; border: none;">RESTART</button>
@@ -281,10 +277,9 @@
         
         userHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
 
-        // Update Slider Visuals (Reversed for Vertical to go bottom-up or top-down)
-        // Here we use top-to-bottom gradients to match the vertical feel
-        document.getElementById('sat').style.background = `linear-gradient(to bottom, hsl(${h}, 100%, ${l}%), hsl(${h}, 0%, ${l}%))`;
-        document.getElementById('light').style.background = `linear-gradient(to bottom, #fff, hsl(${h}, ${s}%, 50%), #000)`;
+        // Update Gradients - mapping horizontal linear gradient to the visual verticality
+        document.getElementById('sat').style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
+        document.getElementById('light').style.background = `linear-gradient(to right, #000, hsl(${h}, ${s}%, 50%), #fff)`;
     }
 
     function submit() {
