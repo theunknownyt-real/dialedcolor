@@ -129,7 +129,7 @@
         <div id="left-half" class="half"><div class="half-label">TARGET</div><div id="target-hz" style="font-size: 2rem; font-weight: 900;"></div></div>
         <div id="right-half" class="half"><div class="half-label">YOUR MATCH</div><div id="user-hz" style="font-size: 2rem; font-weight: 900;"></div></div>
         <div id="game-ui">
-            <div class="info-bar"><span id="mode-text">COLOR</span> &nbsp; | &nbsp; ROUND <span id="round-num">1</span>/5 &nbsp; | &nbsp; TOTAL <span id="total-score">0.0</span></div>
+            <div class="info-bar"><span id="mode-text">COLOR</span> &nbsp; | &nbsp; ROUND <span id="round-num">1</span>/5</div>
             <button id="main-btn" class="btn-action" onclick="submitMatch()">Submit Match</button>
             <div id="score-popup"></div>
         </div>
@@ -198,7 +198,6 @@
         overlay.style.display = 'block';
 
         if (mode === 'color') {
-            // Generate Target
             target = { 
                 h: Math.floor(Math.random() * 360), 
                 s: Math.floor(Math.random() * 80) + 10, 
@@ -206,18 +205,14 @@
             };
             overlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
 
-            // Randomize Sliders with a distance check
             let rH, rS, rL;
             let isTooClose = true;
             while (isTooClose) {
                 rH = Math.floor(Math.random() * 360);
                 rS = Math.floor(Math.random() * 100);
                 rL = Math.floor(Math.random() * 100);
-
                 let hDiff = Math.abs(target.h - rH);
                 if (hDiff > 180) hDiff = 360 - hDiff;
-                
-                // Must be 60 deg away in hue OR 40% away in Sat/Light
                 if (hDiff > 60 || Math.abs(target.s - rS) > 40 || Math.abs(target.l - rL) > 40) {
                     isTooClose = false;
                 }
@@ -230,13 +225,11 @@
             document.getElementById('val-l').innerText = rL;
 
         } else {
-            // Generate Pitch Target
             target = Math.floor(Math.random() * 600) + 250;
             targetOsc.frequency.setValueAtTime(target, audioCtx.currentTime);
             targetGain.gain.setTargetAtTime(0.25, audioCtx.currentTime, 0.05);
             overlay.style.backgroundColor = '#111';
 
-            // Randomize Pitch Slider with distance check
             let rF;
             do {
                 rF = (Math.random() * (1000 - 200) + 200).toFixed(1);
@@ -315,8 +308,9 @@
 
         roundScore = Math.round(roundScore * 10) / 10;
         totalScore += roundScore;
+        
+        // Shows individual round score briefly
         scorePopup.innerText = roundScore.toFixed(1);
-        document.getElementById('total-score').innerText = totalScore.toFixed(1);
 
         setTimeout(() => {
             mainBtn.disabled = false;
@@ -349,7 +343,6 @@
     function resetGame() {
         round = 1; totalScore = 0; history = [];
         document.getElementById('round-num').innerText = "1";
-        document.getElementById('total-score').innerText = "0.0";
         document.getElementById('results-screen').style.display = 'none';
         mainBtn.onclick = submitMatch; startRound();
     }
