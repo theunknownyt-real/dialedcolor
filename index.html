@@ -194,34 +194,56 @@
         targetHzDisplay.innerText = "";
         userHzDisplay.innerText = "";
         
-        // Randomize Slider Positions for the new round
-        if(mode === 'color') {
-            const rH = Math.floor(Math.random() * 360);
-            const rS = Math.floor(Math.random() * 100);
-            const rL = Math.floor(Math.random() * 100);
+        const overlay = document.getElementById('overlay-layer');
+        overlay.style.display = 'block';
+
+        if (mode === 'color') {
+            // Generate Target
+            target = { 
+                h: Math.floor(Math.random() * 360), 
+                s: Math.floor(Math.random() * 80) + 10, 
+                l: Math.floor(Math.random() * 60) + 20 
+            };
+            overlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
+
+            // Randomize Sliders with a distance check
+            let rH, rS, rL;
+            let isTooClose = true;
+            while (isTooClose) {
+                rH = Math.floor(Math.random() * 360);
+                rS = Math.floor(Math.random() * 100);
+                rL = Math.floor(Math.random() * 100);
+
+                let hDiff = Math.abs(target.h - rH);
+                if (hDiff > 180) hDiff = 360 - hDiff;
+                
+                // Must be 60 deg away in hue OR 40% away in Sat/Light
+                if (hDiff > 60 || Math.abs(target.s - rS) > 40 || Math.abs(target.l - rL) > 40) {
+                    isTooClose = false;
+                }
+            }
             document.getElementById('hue').value = rH;
             document.getElementById('sat').value = rS;
             document.getElementById('light').value = rL;
             document.getElementById('val-h').innerText = rH;
             document.getElementById('val-s').innerText = rS;
             document.getElementById('val-l').innerText = rL;
-        } else {
-            const rF = (Math.random() * (1000 - 200) + 200).toFixed(1);
-            document.getElementById('freq').value = rF;
-            document.getElementById('val-f').innerText = Math.round(rF) + "Hz";
-        }
 
-        const overlay = document.getElementById('overlay-layer');
-        overlay.style.display = 'block';
-
-        if (mode === 'color') {
-            target = { h: Math.floor(Math.random() * 360), s: Math.floor(Math.random() * 80) + 10, l: Math.floor(Math.random() * 60) + 20 };
-            overlay.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
         } else {
+            // Generate Pitch Target
             target = Math.floor(Math.random() * 600) + 250;
             targetOsc.frequency.setValueAtTime(target, audioCtx.currentTime);
             targetGain.gain.setTargetAtTime(0.25, audioCtx.currentTime, 0.05);
             overlay.style.backgroundColor = '#111';
+
+            // Randomize Pitch Slider with distance check
+            let rF;
+            do {
+                rF = (Math.random() * (1000 - 200) + 200).toFixed(1);
+            } while (Math.abs(rF - target) < 150);
+
+            document.getElementById('freq').value = rF;
+            document.getElementById('val-f').innerText = Math.round(rF) + "Hz";
         }
 
         let start = Date.now();
@@ -236,7 +258,7 @@
                 mainBtn.disabled = false;
                 gameActive = true;
                 toggleSliders(true); 
-                updateVisuals(); // Update workspace background/audio to match new random slider positions
+                updateVisuals(); 
             }
         }, 10);
     }
