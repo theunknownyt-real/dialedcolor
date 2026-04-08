@@ -21,7 +21,6 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px 0;
         }
 
         #game-container {
@@ -133,48 +132,52 @@
             height: 40px;
         }
 
-        /* Results History Styles */
-        .history-container {
+        /* Triangular Result Boxes */
+        .results-grid {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin: 30px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 40px 0;
         }
 
-        .history-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: var(--panel);
-            padding: 10px 15px;
-            border-radius: 10px;
-        }
-
-        .history-swatch-pair {
-            display: flex;
-            width: 120px;
-            height: 40px;
-            border-radius: 6px;
+        .result-box {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            background: #222;
+            border-radius: 4px;
             overflow: hidden;
             border: 1px solid #333;
         }
 
-        .swatch {
-            flex: 1;
+        .tri-target {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
+            clip-path: polygon(0 0, 0% 100%, 100% 0);
         }
 
-        .history-label {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            text-align: left;
-            flex: 1;
+        .tri-user {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(100% 100%, 0% 100%, 100% 0);
         }
 
-        .history-score {
-            font-weight: 800;
-            width: 40px;
-            text-align: right;
+        .res-score {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 10px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 0 3px black;
+            z-index: 10;
         }
 
         .hidden { display: none !important; }
@@ -188,7 +191,7 @@
         <span>TOTAL: <span id="total-score">0.0</span></span>
     </div>
 
-    <div class="preview-container">
+    <div class="preview-container" id="main-preview">
         <div class="color-circle">
             <div id="target-half" class="half"></div>
             <div id="user-half" class="half"></div>
@@ -215,10 +218,10 @@
     </div>
 
     <div id="ui-results" class="hidden">
-        <p style="color: var(--text-dim); font-size: 0.8rem; margin: 0;">FINAL SCORE</p>
-        <h1 id="final-total" style="margin-top: 5px;">0.0</h1>
+        <p style="color: var(--text-dim); font-size: 0.7rem; letter-spacing: 2px; margin: 0;">FINAL PERFORMANCE</p>
+        <h1 id="final-total" style="margin: 10px 0 0 0; font-size: 3rem;">0.0</h1>
         
-        <div id="history-list" class="history-container">
+        <div id="results-grid" class="results-grid">
             </div>
 
         <button onclick="resetGame()">PLAY AGAIN</button>
@@ -229,12 +232,13 @@
     let round = 1;
     let totalScore = 0;
     let target = { h: 0, s: 0, l: 0 };
-    let history = []; // Stores round results
+    let history = [];
     
     const userHalf = document.getElementById('user-half');
     const targetHalf = document.getElementById('target-half');
     const mainBtn = document.getElementById('main-btn');
     const scoreDisplay = document.getElementById('score-display');
+    const previewArea = document.getElementById('main-preview');
 
     function startRound() {
         if (round > 5) return showEnd();
@@ -293,7 +297,6 @@
         let roundScore = Math.max(0, 10 - totalErr);
         roundScore = Math.round(roundScore * 10) / 10;
 
-        // Save to history
         history.push({
             target: `hsl(${target.h}, ${target.s}%, ${target.l}%)`,
             user: `hsl(${h}, ${s}%, ${l}%)`,
@@ -317,25 +320,23 @@
     }
 
     function showEnd() {
+        previewArea.classList.add('hidden'); // Make original circle go away
         document.getElementById('ui-play').classList.add('hidden');
         document.getElementById('ui-results').classList.remove('hidden');
-        document.getElementById('final-total').innerText = totalScore.toFixed(1) + " / 50";
+        document.getElementById('final-total').innerText = totalScore.toFixed(1);
         
-        const historyList = document.getElementById('history-list');
-        historyList.innerHTML = ''; // Clear previous
+        const grid = document.getElementById('results-grid');
+        grid.innerHTML = ''; 
 
-        history.forEach((item, index) => {
-            const row = document.createElement('div');
-            row.className = 'history-item';
-            row.innerHTML = `
-                <div class="history-label">ROUND ${index + 1}</div>
-                <div class="history-swatch-pair">
-                    <div class="swatch" style="background: ${item.target}" title="Target"></div>
-                    <div class="swatch" style="background: ${item.user}" title="Your Match"></div>
-                </div>
-                <div class="history-score">${item.score}</div>
+        history.forEach((item) => {
+            const box = document.createElement('div');
+            box.className = 'result-box';
+            box.innerHTML = `
+                <div class="tri-target" style="background: ${item.target}"></div>
+                <div class="tri-user" style="background: ${item.user}"></div>
+                <div class="res-score">${item.score}</div>
             `;
-            historyList.appendChild(row);
+            grid.appendChild(box);
         });
     }
 
@@ -345,6 +346,7 @@
         history = [];
         document.getElementById('round-num').innerText = "1";
         document.getElementById('total-score').innerText = "0.0";
+        previewArea.classList.remove('hidden');
         document.getElementById('ui-play').classList.remove('hidden');
         document.getElementById('ui-results').classList.add('hidden');
         mainBtn.onclick = submit;
