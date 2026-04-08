@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basically dialed</title>
+    <title>Basically Dialed</title>
     <style>
         :root {
             --bg: #0a0a0a;
@@ -90,10 +90,11 @@
         /* --- Results --- */
         #results-screen { z-index: 3000; }
         .history-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin: 40px 0; max-width: 80%; }
-        .history-box { width: 80px; height: 80px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid #333; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 900; }
-        .tri-t { position: absolute; width:100%; height:100%; clip-path: polygon(0 0, 0% 100%, 100% 0); z-index: 1; }
-        .tri-u { position: absolute; width:100%; height:100%; clip-path: polygon(100% 100%, 0% 100%, 100% 0); z-index: 1; }
-        .hz-text { z-index: 2; position: relative; text-shadow: 0 2px 4px black; }
+        .history-box { width: 90px; height: 110px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid #333; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 900; padding: 5px; }
+        .tri-t { position: absolute; width:100%; height:100%; clip-path: polygon(0 0, 0% 100%, 100% 0); z-index: 1; top: 0; left: 0; }
+        .tri-u { position: absolute; width:100%; height:100%; clip-path: polygon(100% 100%, 0% 100%, 100% 0); z-index: 1; top: 0; left: 0; }
+        .hz-text { z-index: 2; position: relative; text-shadow: 0 2px 4px black; margin-bottom: 2px; }
+        .pts-text { z-index: 2; color: var(--accent-pitch); margin-top: auto; font-size: 0.8rem; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -276,22 +277,51 @@
         toggleSliders(false); 
         mainBtn.disabled = true;
         let roundScore = 1.0;
-        const f = parseFloat(document.getElementById('freq').value);
 
         if (mode === 'color') {
-            const h = document.getElementById('hue').value, s = document.getElementById('sat').value, l = document.getElementById('light').value;
+            const h = parseInt(document.getElementById('hue').value);
+            const s = parseInt(document.getElementById('sat').value);
+            const l = parseInt(document.getElementById('light').value);
+            
             leftHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
-            let hDiff = Math.abs(target.h - h); if (hDiff > 180) hDiff = 360 - hDiff;
-            const err = (hDiff / 180 * 7) + (Math.abs(target.s - s) / 100 * 2) + (Math.abs(target.l - l) / 100 * 2);
-            roundScore = Math.max(1, 10 - err);
-            history.push({ t: `hsl(${target.h}, ${target.s}%, ${target.l}%)`, u: `hsl(${h}, ${s}%, ${l}%)` });
+            
+            // Calculate differences
+            let hDiff = Math.abs(target.h - h); 
+            if (hDiff > 180) hDiff = 360 - hDiff; 
+            const sDiff = Math.abs(target.s - s);
+            const lDiff = Math.abs(target.l - l);
+
+            // UPDATED BUFFER ZONE: Within 5 units of target gives a perfect 10
+            if (hDiff <= 5 && sDiff <= 5 && lDiff <= 5) {
+                roundScore = 10;
+            } else {
+                const err = (hDiff / 180 * 7) + (sDiff / 100 * 2) + (lDiff / 100 * 2);
+                roundScore = Math.max(1, 10 - err);
+            }
+
+            history.push({ 
+                t: `hsl(${target.h}, ${target.s}%, ${target.l}%)`, 
+                u: `hsl(${h}, ${s}%, ${l}%)`,
+                pts: Math.round(roundScore * 10) / 10
+            });
         } else {
-            const dist = Math.abs(Math.log2(f / target));
-            roundScore = Math.max(1, 10 - (dist * 25));
+            const f = parseFloat(document.getElementById('freq').value);
+            const hzDiff = Math.abs(f - target);
+            if (hzDiff <= 2) {
+                roundScore = 10;
+            } else {
+                const dist = Math.abs(Math.log2(f / target));
+                roundScore = Math.max(1, 10 - (dist * 25));
+            }
+            
             leftHalf.style.backgroundColor = 'var(--accent-pitch)';
             targetHzDisplay.innerText = target + "Hz";
             userHzDisplay.innerText = Math.round(f) + "Hz";
-            history.push({ t: target, u: Math.round(f) });
+            history.push({ 
+                t: target, 
+                u: Math.round(f), 
+                pts: Math.round(roundScore * 10) / 10 
+            });
 
             userGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
             targetGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05); 
@@ -309,7 +339,6 @@
         roundScore = Math.round(roundScore * 10) / 10;
         totalScore += roundScore;
         
-        // Shows individual round score briefly
         scorePopup.innerText = roundScore.toFixed(1);
 
         setTimeout(() => {
@@ -332,9 +361,15 @@
         history.forEach(item => {
             const box = document.createElement('div'); box.className = 'history-box';
             if (mode === 'color') {
-                box.innerHTML = `<div class="tri-t" style="background:${item.t}"></div><div class="tri-u" style="background:${item.u}"></div>`;
+                box.innerHTML = `
+                    <div class="tri-t" style="background:${item.t}"></div>
+                    <div class="tri-u" style="background:${item.u}"></div>
+                    <div class="pts-text">${item.pts.toFixed(1)}</div>`;
             } else {
-                box.innerHTML = `<div class="hz-text" style="color:var(--accent-pitch)">T: ${item.t}</div><div class="hz-text">U: ${item.u}</div>`;
+                box.innerHTML = `
+                    <div class="hz-text" style="color:var(--accent-pitch)">T: ${item.t}</div>
+                    <div class="hz-text">U: ${item.u}</div>
+                    <div class="pts-text">${item.pts.toFixed(1)}</div>`;
             }
             display.appendChild(box);
         });
