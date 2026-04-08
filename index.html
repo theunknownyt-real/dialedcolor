@@ -64,15 +64,15 @@
             border: 4px solid black; border-radius: 50%; cursor: pointer;
         }
 
-        /* Color Slider Specifics */
         #hue { background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000); }
         #sat, #light, #freq { background: #222; }
 
         /* --- Workspace --- */
         #workspace { flex: 1; position: relative; display: flex; background: #000; }
-        .half { flex: 1; height: 100%; transition: background-color 0.2s; position: relative; }
+        .half { flex: 1; height: 100%; transition: background-color 0.2s; position: relative; display: flex; align-items: center; justify-content: center; }
         #left-half { background: #000; border-right: 1px solid #111; }
         #right-half { background: #080808; }
+        .half-label { position: absolute; bottom: 40px; font-size: 0.7rem; font-weight: 900; color: rgba(255,255,255,0.2); letter-spacing: 2px; }
 
         #overlay-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -88,10 +88,11 @@
 
         /* --- Results --- */
         #results-screen { z-index: 3000; }
-        .history-grid { display: flex; gap: 15px; margin: 40px 0; }
-        .history-box { width: 60px; height: 60px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid #333; }
-        .tri-t { position: absolute; width:100%; height:100%; clip-path: polygon(0 0, 0% 100%, 100% 0); }
-        .tri-u { position: absolute; width:100%; height:100%; clip-path: polygon(100% 100%, 0% 100%, 100% 0); }
+        .history-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin: 40px 0; max-width: 80%; }
+        .history-box { width: 80px; height: 80px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid #333; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 900; }
+        .tri-t { position: absolute; width:100%; height:100%; clip-path: polygon(0 0, 0% 100%, 100% 0); z-index: 1; }
+        .tri-u { position: absolute; width:100%; height:100%; clip-path: polygon(100% 100%, 0% 100%, 100% 0); z-index: 1; }
+        .hz-text { z-index: 2; position: relative; text-shadow: 0 2px 4px black; }
     </style>
 </head>
 <body>
@@ -108,29 +109,12 @@
 <div id="game-wrapper">
     <div id="sidebar">
         <div id="color-sliders" class="slider-group">
-            <div class="slider-wrapper">
-                <div class="slider-label">HUE</div>
-                <input type="range" id="hue" class="vertical" min="0" max="360" value="180">
-                <div class="slider-val" id="val-h">180</div>
-            </div>
-            <div class="slider-wrapper">
-                <div class="slider-label">SAT</div>
-                <input type="range" id="sat" class="vertical" min="0" max="100" value="50">
-                <div class="slider-val" id="val-s">50</div>
-            </div>
-            <div class="slider-wrapper">
-                <div class="slider-label">LIT</div>
-                <input type="range" id="light" class="vertical" min="0" max="100" value="50">
-                <div class="slider-val" id="val-l">50</div>
-            </div>
+            <div class="slider-wrapper"><div class="slider-label">HUE</div><input type="range" id="hue" class="vertical" min="0" max="360" value="180"><div class="slider-val" id="val-h">180</div></div>
+            <div class="slider-wrapper"><div class="slider-label">SAT</div><input type="range" id="sat" class="vertical" min="0" max="100" value="50"><div class="slider-val" id="val-s">50</div></div>
+            <div class="slider-wrapper"><div class="slider-label">LIT</div><input type="range" id="light" class="vertical" min="0" max="100" value="50"><div class="slider-val" id="val-l">50</div></div>
         </div>
-
         <div id="pitch-sliders" class="slider-group" style="display:none;">
-            <div class="slider-wrapper" style="width: 100%;">
-                <div class="slider-label">FREQUENCY</div>
-                <input type="range" id="freq" class="vertical" min="200" max="1000" step="0.1" value="440">
-                <div class="slider-val" id="val-f" style="font-size: 1.5rem;">440Hz</div>
-            </div>
+            <div class="slider-wrapper" style="width: 100%;"><div class="slider-label">FREQUENCY</div><input type="range" id="freq" class="vertical" min="200" max="1000" step="0.1" value="440"><div class="slider-val" id="val-f" style="font-size: 1.5rem;">440Hz</div></div>
         </div>
     </div>
 
@@ -141,8 +125,8 @@
                 <div id="countdown">3.000</div>
             </div>
         </div>
-        <div id="left-half" class="half"></div>
-        <div id="right-half" class="half"></div>
+        <div id="left-half" class="half"><div class="half-label">TARGET</div><div id="target-hz" style="font-size: 2rem; font-weight: 900;"></div></div>
+        <div id="right-half" class="half"><div class="half-label">YOUR MATCH</div><div id="user-hz" style="font-size: 2rem; font-weight: 900;"></div></div>
         <div id="game-ui">
             <div class="info-bar"><span id="mode-text">COLOR</span> &nbsp; | &nbsp; ROUND <span id="round-num">1</span>/5 &nbsp; | &nbsp; TOTAL <span id="total-score">0.0</span></div>
             <button id="main-btn" class="btn-action" onclick="submitMatch()">Submit Match</button>
@@ -167,6 +151,7 @@
 
     const leftHalf = document.getElementById('left-half'), rightHalf = document.getElementById('right-half');
     const mainBtn = document.getElementById('main-btn'), scorePopup = document.getElementById('score-popup');
+    const targetHzDisplay = document.getElementById('target-hz'), userHzDisplay = document.getElementById('user-hz');
 
     function initGame(m) {
         mode = m;
@@ -195,6 +180,7 @@
         if (round > 5) return;
         gameActive = false; mainBtn.disabled = true; mainBtn.innerText = "SUBMIT MATCH";
         scorePopup.innerText = ""; leftHalf.style.backgroundColor = '#000';
+        targetHzDisplay.innerText = ""; userHzDisplay.innerText = "";
         const overlay = document.getElementById('overlay-layer');
         overlay.style.display = 'block';
 
@@ -224,14 +210,9 @@
     function updateVisuals() {
         if (mode === 'color') {
             const h = document.getElementById('hue').value, s = document.getElementById('sat').value, l = document.getElementById('light').value;
-            document.getElementById('val-h').innerText = h;
-            document.getElementById('val-s').innerText = s;
-            document.getElementById('val-l').innerText = l;
-            
-            // Dynamic Slider Backgrounds
+            document.getElementById('val-h').innerText = h; document.getElementById('val-s').innerText = s; document.getElementById('val-l').innerText = l;
             document.getElementById('sat').style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
             document.getElementById('light').style.background = `linear-gradient(to right, #000, hsl(${h}, ${s}%, 50%), #fff)`;
-            
             rightHalf.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
         } else if (gameActive) {
             const f = document.getElementById('freq').value;
@@ -244,23 +225,36 @@
     function submitMatch() {
         gameActive = false; mainBtn.disabled = true;
         let roundScore = 1.0;
-        let userColor = "";
+        const f = parseFloat(document.getElementById('freq').value);
 
         if (mode === 'color') {
             const h = document.getElementById('hue').value, s = document.getElementById('sat').value, l = document.getElementById('light').value;
-            userColor = `hsl(${h}, ${s}%, ${l}%)`;
             leftHalf.style.backgroundColor = `hsl(${target.h}, ${target.s}%, ${target.l}%)`;
-            let hDiff = Math.abs(target.h - h);
-            if (hDiff > 180) hDiff = 360 - hDiff;
+            let hDiff = Math.abs(target.h - h); if (hDiff > 180) hDiff = 360 - hDiff;
             const err = (hDiff / 180 * 7) + (Math.abs(target.s - s) / 100 * 2) + (Math.abs(target.l - l) / 100 * 2);
             roundScore = Math.max(1, 10 - err);
-            history.push({ t: `hsl(${target.h}, ${target.s}%, ${target.l}%)`, u: userColor });
+            history.push({ t: `hsl(${target.h}, ${target.s}%, ${target.l}%)`, u: `hsl(${h}, ${s}%, ${l}%)` });
         } else {
-            const f = document.getElementById('freq').value;
-            targetGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05);
+            // Scoring
             const dist = Math.abs(Math.log2(f / target));
             roundScore = Math.max(1, 10 - (dist * 25));
             leftHalf.style.backgroundColor = 'var(--accent-pitch)';
+            targetHzDisplay.innerText = target + "Hz";
+            userHzDisplay.innerText = Math.round(f) + "Hz";
+            history.push({ t: target, u: Math.round(f) });
+
+            // Sequential Playback comparison
+            userGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+            targetGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05); // Play target
+            setTimeout(() => {
+                targetGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+                setTimeout(() => {
+                    userGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.05); // Play user
+                    setTimeout(() => {
+                        userGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+                    }, 1000);
+                }, 200);
+            }, 1000);
         }
 
         roundScore = Math.round(roundScore * 10) / 10;
@@ -269,14 +263,10 @@
         document.getElementById('total-score').innerText = totalScore.toFixed(1);
 
         setTimeout(() => {
-            if (mode === 'pitch') {
-                targetGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-                userGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-            }
             mainBtn.disabled = false;
             mainBtn.innerText = (round < 5) ? "CONTINUE" : "SHOW RESULTS";
             mainBtn.onclick = (round < 5) ? nextRound : showResults;
-        }, 1500);
+        }, mode === 'pitch' ? 2500 : 1500);
     }
 
     function nextRound() {
@@ -289,13 +279,15 @@
         document.getElementById('final-total').innerText = totalScore.toFixed(1);
         const display = document.getElementById('history-display');
         display.innerHTML = '';
-        if (mode === 'color') {
-            history.forEach(item => {
-                const box = document.createElement('div'); box.className = 'history-box';
+        history.forEach(item => {
+            const box = document.createElement('div'); box.className = 'history-box';
+            if (mode === 'color') {
                 box.innerHTML = `<div class="tri-t" style="background:${item.t}"></div><div class="tri-u" style="background:${item.u}"></div>`;
-                display.appendChild(box);
-            });
-        }
+            } else {
+                box.innerHTML = `<div class="hz-text" style="color:var(--accent-pitch)">T: ${item.t}</div><div class="hz-text">U: ${item.u}</div>`;
+            }
+            display.appendChild(box);
+        });
     }
 
     function resetGame() {
